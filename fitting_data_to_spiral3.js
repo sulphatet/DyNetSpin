@@ -180,14 +180,14 @@ function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, ei
   // append the summary to #community_textbox
   d3.select("#community_textbox")
       .html("<b>Name: </b>"+ node_name +"<br/>"
-          + "<b> Collaborator_Count: </b>"+ deg +"<br/><br/>"
+          + "<b> Neighbours_Count: </b>"+ deg +"<br/><br/>"
           + "<b>Group Information:</b><br/>"
-          + "<b>Number of Authors in Group:</b> "+ groupSize + "<br/>"
+          + "<b>Number of Nodes in Group:</b> "+ groupSize + "<br/>"
           + "<b>Edge-density in Group:</b> "+ groupDensity + "<br/><br/>"
-          + "<b>Total Collaborators:</b> " + adjacent_nodes.length + "<br/>"
-          + "<b>Collaborators within Group:</b> " + count + "<br/>"
-          + "<b>Collaborators in other Group:</b> " + inter_community_connections + "<br/>"
-          + "<b>List of Collaborators:</b> " + name_of_adjacent_nodes.join(", "))
+          + "<b>Total Neighbours:</b> " + adjacent_nodes.length + "<br/>"
+          + "<b>Neighbours within Group:</b> " + count + "<br/>"
+          + "<b>Neighbours in other Group:</b> " + inter_community_connections + "<br/>"
+          + "<b>List of Neighbours:</b> " + name_of_adjacent_nodes.join(", "))
       .style("font-size", "12px");
 }
 
