@@ -1861,7 +1861,10 @@ function getFitTransform (xMin, xMax, yMin, yMax, w, h, pad = 10) {
   – complete hover behaviour (tooltip, edge swapping, main-view highlight,
     side textbox & charts, etc.) restored
 ─────────────────────────────────────────────────────────────────────────────*/
-function updateCommunitySpiralSideWidget () {
+/*─────────────────────────────────────────────────────────────────────────────
+ FULL SIDE-WIDGET REDRAW (Fixed)
+─────────────────────────────────────────────────────────────────────────────*/
+function updateCommunitySpiralSideWidget() {
 
   /* 1 ▸ nothing selected → wipe and bail out */
   if (selectedCommunitySpirals.length === 0) {
@@ -1869,7 +1872,7 @@ function updateCommunitySpiralSideWidget () {
     return;
   }
 
-  const highlightColors = ["gold", "magenta", "green"];   // max. three
+  const highlightColors = ["gold", "magenta", "green"]; // max. three
 
   /* 2 ▸ fresh canvas every time */
   d3.select("#communitySideContainer").html("");
@@ -1878,190 +1881,210 @@ function updateCommunitySpiralSideWidget () {
   selectedCommunitySpirals.forEach((selObj, index) => {
 
     /* ───── a) outer <div> + header row ─────────────────────────────────── */
-    const subDivID   = `sideSpiralDiv_${index}`;
-    const sideDiv    = d3.select("#communitySideContainer")
-                           .append("div")
-                           .attr("id", subDivID)
-                           .style("border", "1px solid #ccc")
-                           .style("padding", "6px")
-                           .style("margin-bottom", "10px");
+    const subDivID = `sideSpiralDiv_${index}`;
+    const sideDiv = d3.select("#communitySideContainer")
+      .append("div")
+      .attr("id", subDivID)
+      .style("border", "1px solid #ccc")
+      .style("padding", "6px")
+      .style("margin-bottom", "10px");
 
-    const headerRow  = sideDiv.append("div")
-                              .style("display", "flex")
-                              .style("justify-content", "space-between")
-                              .style("align-items", "center");
+    const headerRow = sideDiv.append("div")
+      .style("display", "flex")
+      .style("justify-content", "space-between")
+      .style("align-items", "center");
 
     headerRow.append("span")
-             .html(`<b>Community ${selObj.communityID} from ${selObj.yearRange}</b>`);
+      .html(`<b>Community ${selObj.communityID} from ${selObj.yearRange}</b>`);
 
     /* remove-selection btn */
     headerRow.append("button")
-             .text("Unselect")
-             .on("click", () => {
-               selectedCommunitySpirals.splice(index, 1);     // drop it
-               /* rebuild globalHighlightNodesMap */
-               const newMap = {};
-               selectedCommunitySpirals.forEach((s, i) => {
-                 const col = highlightColors[i] || "gold";
-                 s.originalNodeData.forEach(n => {
-                   if (!(n.node in newMap)) newMap[n.node] = col;
-                 });
-               });
-               globalHighlightNodesMap = newMap;
-               d3.selectAll(".happy")
-                 .style("stroke", d => globalHighlightNodesMap[d.node] || "none")
-                 .style("stroke-width", d => globalHighlightNodesMap[d.node] ? 1 : 0);
-               updateCommunitySpiralSideWidget();              // re-render
-             });
+      .text("Unselect")
+      .on("click", () => {
+        selectedCommunitySpirals.splice(index, 1); // drop it
+        /* rebuild globalHighlightNodesMap */
+        const newMap = {};
+        selectedCommunitySpirals.forEach((s, i) => {
+          const col = highlightColors[i] || "gold";
+          s.originalNodeData.forEach(n => {
+            if (!(n.node in newMap)) newMap[n.node] = col;
+          });
+        });
+        globalHighlightNodesMap = newMap;
+        d3.selectAll(".happy")
+          .style("stroke", d => globalHighlightNodesMap[d.node] || "none")
+          .style("stroke-width", d => globalHighlightNodesMap[d.node] ? 1 : 0);
+        updateCommunitySpiralSideWidget(); // re-render
+      });
 
     /* ───── b) svg canvas ──────────────────────────────────────────────── */
-    const SVG_W = 300, SVG_H = 300;
-    const svg   = sideDiv.append("svg")
-                         .attr("width", SVG_W)
-                         .attr("height", SVG_H);
+    const SVG_W = 300,
+      SVG_H = 300;
+    const svg = sideDiv.append("svg")
+      .attr("width", SVG_W)
+      .attr("height", SVG_H);
 
     /* gRoot will be zoomed/panned as a single unit */
     const gRoot = svg.append("g");
 
     /* original node & edge data kept from click-time */
-    const nodesOriginal   = selObj.originalNodeData;
-    const edgesOriginal   = selObj.originalLinkData || [];
+    const nodesOriginal = selObj.originalNodeData;
+    const edgesOriginal = selObj.originalLinkData || [];
 
     /* mapping of nodes that still exist in the CURRENT timeslice */
-    const currentNodeMap  = new Map();
+    const currentNodeMap = new Map();
     global_data.forEach(n => currentNodeMap.set(n.node, n));
 
     /* edges among those present in the current slice */
-    const nodeIDsSet      = new Set(nodesOriginal.map(d => d.node));
-    const edgesCurrent    = node_to_node_link_data.filter(
-                              e => nodeIDsSet.has(e.source) && nodeIDsSet.has(e.target));
+    const nodeIDsSet = new Set(nodesOriginal.map(d => d.node));
+    const edgesCurrent = node_to_node_link_data.filter(
+      e => nodeIDsSet.has(e.source) && nodeIDsSet.has(e.target));
 
     /* ───── c) deterministic spiral layout for the original nodes ─────── */
-    const centreX = 150, centreY = 150,
-          R = 800, sides = 450, coils = 25, rotation = 0;
-    const awayStep   = R / sides,
-          aroundStep = coils / sides,
-          aroundRad  = aroundStep * 2 * Math.PI;
+    const centreX = 150,
+      centreY = 150,
+      R = 800,
+      sides = 450,
+      coils = 25,
+      rotation = 0;
+    const awayStep = R / sides,
+      aroundStep = coils / sides,
+      aroundRad = aroundStep * 2 * Math.PI;
 
     nodesOriginal.forEach((d, i) => {
-      const away   = (i + 30) * awayStep;
+      const away = (i + 30) * awayStep;
       const around = (i + 30) * aroundRad + rotation;
       d.new_x = centreX + Math.cos(around) * away;
       d.new_y = centreY + Math.sin(around) * away;
     });
 
     /* ───── d) edge layers (current & original) ────────────────────────── */
-    const edgesG          = gRoot.append("g");
-    const nodesG          = gRoot.append("g");
+    const edgesG = gRoot.append("g");
+    const nodesG = gRoot.append("g");
 
     const edgesCurrentSel = edgesG.selectAll(".edgeCurrent")
-                                  .data(edgesCurrent)
-                                  .enter().append("line")
-                                    .attr("class", "edgeCurrent")
-                                    .attr("x1", d => nodesOriginal.find(n => n.node === d.source).new_x)
-                                    .attr("y1", d => nodesOriginal.find(n => n.node === d.source).new_y)
-                                    .attr("x2", d => nodesOriginal.find(n => n.node === d.target).new_x)
-                                    .attr("y2", d => nodesOriginal.find(n => n.node === d.target).new_y)
-                                    .style("stroke", d => getEdgeColorByType(d.type))
-                                    .style("stroke-opacity", 0.25)
-                                    .style("stroke-width", 1.5);
+      .data(edgesCurrent)
+      .enter().append("line")
+      .attr("class", "edgeCurrent")
+      .attr("x1", d => nodesOriginal.find(n => n.node === d.source).new_x)
+      .attr("y1", d => nodesOriginal.find(n => n.node === d.source).new_y)
+      .attr("x2", d => nodesOriginal.find(n => n.node === d.target).new_x)
+      .attr("y2", d => nodesOriginal.find(n => n.node === d.target).new_y)
+      .style("stroke", d => getEdgeColorByType(d.type))
+      .style("stroke-opacity", 0.25)
+      .style("stroke-width", 1.5);
 
     const edgesOriginalSel = edgesG.selectAll(".edgeOriginal")
-                                   .data(edgesOriginal)
-                                   .enter().append("line")
-                                     .attr("class", "edgeOriginal")
-                                     .attr("x1", d => nodesOriginal.find(n => n.node === d.source).new_x)
-                                     .attr("y1", d => nodesOriginal.find(n => n.node === d.source).new_y)
-                                     .attr("x2", d => nodesOriginal.find(n => n.node === d.target).new_x)
-                                     .attr("y2", d => nodesOriginal.find(n => n.node === d.target).new_y)
-                                     .style("stroke", d => getEdgeColorByType(d.type))
-                                     .style("stroke-width", 1.5)
-                                     .style("opacity", 0);            // hidden by default
+      .data(edgesOriginal)
+      .enter().append("line")
+      .attr("class", "edgeOriginal")
+      .attr("x1", d => nodesOriginal.find(n => n.node === d.source).new_x)
+      .attr("y1", d => nodesOriginal.find(n => n.node === d.source).new_y)
+      .attr("x2", d => nodesOriginal.find(n => n.node === d.target).new_x)
+      .attr("y2", d => nodesOriginal.find(n => n.node === d.target).new_y)
+      .style("stroke", d => getEdgeColorByType(d.type))
+      .style("stroke-width", 1.5)
+      .style("opacity", 0); // hidden by default
 
     /* ───── e) nodes (ellipses) ────────────────────────────────────────── */
     let nodeSel = nodesG.selectAll(".sideCommEllipse")
-                        .data(nodesOriginal)
-                        .enter().append("ellipse")
-                          .attr("class", "sideCommEllipse")
-                          .attr("cx", d => d.new_x)
-                          .attr("cy", d => d.new_y)
-                          .attr("rx", 4).attr("ry", 4)
-                          .style("stroke", "#333").style("stroke-width", 1)
-                          .style("opacity", d => currentNodeMap.has(d.node) ? 1 : 0.25)
-                          .style("fill", d => {
-                            // 1) Random mode: colour by community, but using the original yearRange
-                            if (selObj.randomColorActive) {
-                              const ts = selObj.yearRange || "UnknownTimeslice";
-                              return getRandomColorForTimesliceCommunity(ts, d.community);
-                            }
+      .data(nodesOriginal)
+      .enter().append("ellipse")
+      .attr("class", "sideCommEllipse")
+      .attr("cx", d => d.new_x)
+      .attr("cy", d => d.new_y)
+      .attr("rx", 4).attr("ry", 4)
+      .style("stroke", "#333").style("stroke-width", 1)
+      .style("opacity", d => currentNodeMap.has(d.node) ? 1 : 0.25)
+      .style("fill", d => {
+        // --- FIXED LOGIC START ---
+        // 1) Random mode: colour by CURRENT timeslice community
+        if (selObj.randomColorActive) {
+          if (currentNodeMap.has(d.node)) {
+            const currentData = currentNodeMap.get(d.node);
+            const currentTs = window.currentYearRange || "UnknownTimeslice";
+            // Use the CURRENT community ID to generate the color
+            return getRandomColorForTimesliceCommunity(currentTs, currentData.community);
+          }
+          // Fallback if node doesn't exist in current slice (extinct)
+          return "#e0e0e0"; 
+        }
+        // --- FIXED LOGIC END ---
 
-                            // 2) Normal mode: use the frozen colour from the year of selection
-                            if (d.frozenColor) {
-                              return d.frozenColor;
-                            }
+        // 2) Normal mode: use the frozen colour from the year of selection
+        if (d.frozenColor) {
+          return d.frozenColor;
+        }
 
-                            // 3) Backwards-compat fallback if frozenColor is missing
-                            if (!currentNodeMap.has(d.node)) return "gray";
-                            const cur = currentNodeMap.get(d.node);
-                            return getColorBasedOnFlags(cur);
-                          });
+        // 3) Backwards-compat fallback if frozenColor is missing
+        if (!currentNodeMap.has(d.node)) return "gray";
+        const cur = currentNodeMap.get(d.node);
+        return getColorBasedOnFlags(cur);
+      });
 
     /* ───── f) bounding-box fit + zoom behaviour ──────────────────────── */
     const xVals = nodesOriginal.map(d => d.new_x),
-          yVals = nodesOriginal.map(d => d.new_y);
-    const fit   = getFitTransform(d3.min(xVals), d3.max(xVals),
-                                  d3.min(yVals), d3.max(yVals),
-                                  SVG_W, SVG_H, 10);
+      yVals = nodesOriginal.map(d => d.new_y);
+    const fit = getFitTransform(d3.min(xVals), d3.max(xVals),
+      d3.min(yVals), d3.max(yVals),
+      SVG_W, SVG_H, 10);
     gRoot.attr("transform", fit);
 
     const zoomBehaviour = d3.zoom()
-                              .scaleExtent([0.5, 10])
-                              .on("zoom", ev => gRoot.attr("transform", ev.transform));
+      .scaleExtent([0.5, 10])
+      .on("zoom", ev => gRoot.attr("transform", ev.transform));
     svg.call(zoomBehaviour).call(zoomBehaviour.transform, fit);
 
     /* ───── g) zoom buttons ( + / – / reset ) ─────────────────────────── */
     const btnRow = headerRow.append("span");
     btnRow.append("button").text("＋").style("margin-left", "4px")
-          .on("click", () => svg.transition().call(zoomBehaviour.scaleBy, 1.25));
+      .on("click", () => svg.transition().call(zoomBehaviour.scaleBy, 1.25));
     btnRow.append("button").text("－").style("margin-left", "2px")
-          .on("click", () => svg.transition().call(zoomBehaviour.scaleBy, 1/1.25));
+      .on("click", () => svg.transition().call(zoomBehaviour.scaleBy, 1 / 1.25));
     btnRow.append("button").text("Reset").style("margin-left", "2px")
-          .on("click", () => svg.transition().call(zoomBehaviour.transform, fit));
+      .on("click", () => svg.transition().call(zoomBehaviour.transform, fit));
 
     /* ───── h) hover info text placeholder ────────────────────────────── */
     const hoverInfo = svg.append("text")
-                         .attr("x", 10).attr("y", SVG_H - 10)
-                         .attr("font-size", "13px")
-                         .attr("font-weight", "bold");
+      .attr("x", 10).attr("y", SVG_H - 10)
+      .attr("font-size", "13px")
+      .attr("font-weight", "bold");
 
     /* ───── i) random-colour checkbox (after nodeSel so it can reference) */
     const chkRow = sideDiv.append("div").style("margin-top", "6px");
     chkRow.append("input")
-          .attr("type", "checkbox")
-          .attr("id", `randCol_${index}`)
-          .property("checked", selObj.randomColorActive)
-          .on("change", function () {
-            selObj.randomColorActive = this.checked;
-            nodeSel.style("fill", d => {
-              if (selObj.randomColorActive) {
-                const ts = selObj.yearRange || "UnknownTimeslice";
-                return getRandomColorForTimesliceCommunity(ts, d.community);
-              }
-              if (d.frozenColor) return d.frozenColor;
-              if (!currentNodeMap.has(d.node)) return "gray";
-              const cur = currentNodeMap.get(d.node);
-              return getColorBasedOnFlags(cur);
-            });
-          });
+      .attr("type", "checkbox")
+      .attr("id", `randCol_${index}`)
+      .property("checked", selObj.randomColorActive)
+      .on("change", function() {
+        selObj.randomColorActive = this.checked;
+        nodeSel.style("fill", d => {
+          // --- FIXED LOGIC START (Repeated for Checkbox Change) ---
+          if (selObj.randomColorActive) {
+            if (currentNodeMap.has(d.node)) {
+              const currentData = currentNodeMap.get(d.node);
+              const currentTs = window.currentYearRange || "UnknownTimeslice";
+              return getRandomColorForTimesliceCommunity(currentTs, currentData.community);
+            }
+            return "#e0e0e0"; 
+          }
+          // --- FIXED LOGIC END ---
+
+          if (d.frozenColor) return d.frozenColor;
+          if (!currentNodeMap.has(d.node)) return "gray";
+          const cur = currentNodeMap.get(d.node);
+          return getColorBasedOnFlags(cur);
+        });
+      });
     chkRow.append("label")
-          .attr("for", `randCol_${index}`)
-          .style("margin-left", "4px")
-          .text("Random colour by timeslice community");
+      .attr("for", `randCol_${index}`)
+      .style("margin-left", "4px")
+      .text("Random colour by timeslice community");
 
     /* ───── j) FULL hover behaviour on nodeSel ─────────────────────────── */
     nodeSel
-      .on("mouseover", function (event, d) {
-        if (!currentNodeMap.has(d.node)) return;      // skip extinct nodes
+      .on("mouseover", function(event, d) {
+        if (!currentNodeMap.has(d.node)) return; // skip extinct nodes
 
         hoverInfo.text(`Name: ${d.name}  (id ${d.node})`);
 
@@ -2080,8 +2103,8 @@ function updateCommunitySpiralSideWidget () {
           .style("stroke-width", 3);
 
         /* side-pane text box & charts */
-        const curNode     = currentNodeMap.get(d.node);
-        const neighbours  = connections_list[d.node] || [];
+        const curNode = currentNodeMap.get(d.node);
+        const neighbours = connections_list[d.node] || [];
         const commDataCur = global_data.filter(n => n.community === curNode.community);
 
         draw_textbox(
@@ -2099,7 +2122,7 @@ function updateCommunitySpiralSideWidget () {
         drawCommunityAdjMatrix(commDataCur, node_to_node_link_data);
         drawNodeTimesliceChart(d.node);
       })
-      .on("mouseout", function (event, d) {
+      .on("mouseout", function(event, d) {
         hoverInfo.text("");
 
         edgesCurrentSel.style("opacity", 1);
@@ -2115,9 +2138,8 @@ function updateCommunitySpiralSideWidget () {
           .style("stroke-width", n => globalHighlightNodesMap[n.node] ? 1 : 0);
       });
 
-  });   // ← end forEach(selectedCommunitySpirals)
+  }); // ← end forEach(selectedCommunitySpirals)
 }
-
 
 
 //////////////////////////////////////////
