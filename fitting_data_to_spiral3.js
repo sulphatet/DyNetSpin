@@ -1,4 +1,3 @@
-
 //these variables are used to update the charts based on settings
 var global_data;
 var global_data_unchanged;
@@ -56,7 +55,7 @@ function safeCall(selOrTr, fn, ...args) {
 
 // ── Main canvas zoom/pan state ─────────────────────────────────────
 let mainZoom = null;
-let mainZoomRoot = null;        // the <g> we actually transform
+let mainZoomRoot = null;       // the <g> we actually transform
 let currentTransform = d3.zoomIdentity;
 const MAIN_ZOOM_EXTENT = [0.05, 40]; // "infinite-ish" range
 let lodOverlayG = null;         // LOD group (aggregated view on far zoom-out)
@@ -64,10 +63,10 @@ let USE_BRUSH = false;          // turn off brush in favor of zoom/pan
 
 
 var table = d3.select("#table-location")
-	.append("table")
-	.attr("class", "table table-condensed table-striped"),
-	thead = table.append("thead"),
-	tbody = table.append("tbody");
+    .append("table")
+    .attr("class", "table table-condensed table-striped"),
+    thead = table.append("thead"),
+    tbody = table.append("tbody");
 
 //--- ADDED FOR LOCAL VOLATILITY ---
 let localVolatilityColFlag = 1;       // 0 => off, 1 => on
@@ -150,45 +149,45 @@ function adoptLooseChildren() {
 
 
 function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, eig, node_name) {
-  var centrality_data = data.map(function(d){return d.centrality});
+  var centrality_data = data.map(function(d){return d.centrality});
 
-  var margin = {top: 10, right: 30, bottom: 30, left: 40},
-      width = 250 - margin.left - margin.right,
-      height = 250 - margin.top - margin.bottom;
+  var margin = {top: 10, right: 30, bottom: 30, left: 40},
+      width = 250 - margin.left - margin.right,
+      height = 250 - margin.top - margin.bottom;
 
-  var inter_community_connections = adjacent_nodes.length - count;
+  var inter_community_connections = adjacent_nodes.length - count;
 
-  d3.select("#community_textbox").select("svg").remove();
-  d3.select("#node_textbox").html("");
+  d3.select("#community_textbox").select("svg").remove();
+  d3.select("#node_textbox").html("");
 
-  // Build the list of collaborator names
-  let name_of_adjacent_nodes = [];
-  for (let i = 0; i < adjacent_nodes.length; i++) {
+  // Build the list of collaborator names
+  let name_of_adjacent_nodes = [];
+  for (let i = 0; i < adjacent_nodes.length; i++) {
     // FIX: Search 'global_data_unchanged' (all nodes) instead of 'data' (community-only nodes)
-    let foundObj = global_data_unchanged.find(dd => dd.node === adjacent_nodes[i]);
-    if (foundObj) {
-      name_of_adjacent_nodes.push(foundObj.name);
-    } else {
-      // Fallback for a collaborator not in the current timeslice's node list
-      name_of_adjacent_nodes.push("Unknown/Past Collaborator");
-    }
-  }
+    let foundObj = global_data_unchanged.find(dd => dd.node === adjacent_nodes[i]);
+    if (foundObj) {
+      name_of_adjacent_nodes.push(foundObj.name);
+    } else {
+      // Fallback for a collaborator not in the current timeslice's node list
+      name_of_adjacent_nodes.push("Unknown/Past Collaborator");
+    }
+  }
 
-  let groupDensity = (data[0]) ? data[0].density : "N/A";
-  let groupSize = data.length;
+  let groupDensity = (data[0]) ? data[0].density : "N/A";
+  let groupSize = data.length;
 
-  // append the summary to #community_textbox
-  d3.select("#community_textbox")
-      .html("<b>Name: </b>"+ node_name +"<br/>"
-          + "<b> Neighbours_Count: </b>"+ deg +"<br/><br/>"
-          + "<b>Group Information:</b><br/>"
-          + "<b>Number of Nodes in Group:</b> "+ groupSize + "<br/>"
-          + "<b>Edge-density in Group:</b> "+ groupDensity + "<br/><br/>"
-          + "<b>Total Neighbours:</b> " + adjacent_nodes.length + "<br/>"
-          + "<b>Neighbours within Group:</b> " + count + "<br/>"
-          + "<b>Neighbours in other Group:</b> " + inter_community_connections + "<br/>"
-          + "<b>List of Neighbours:</b> " + name_of_adjacent_nodes.join(", "))
-      .style("font-size", "12px");
+  // append the summary to #community_textbox
+  d3.select("#community_textbox")
+      .html("<b>Name: </b>"+ node_name +"<br/>"
+          + "<b> Neighbours_Count: </b>"+ deg +"<br/><br/>"
+          + "<b>Group Information:</b><br/>"
+          + "<b>Number of Nodes in Group:</b> "+ groupSize + "<br/>"
+          + "<b>Edge-density in Group:</b> "+ groupDensity + "<br/><br/>"
+          + "<b>Total Neighbours:</b> " + adjacent_nodes.length + "<br/>"
+          + "<b>Neighbours within Group:</b> " + count + "<br/>"
+          + "<b>Neighbours in other Group:</b> " + inter_community_connections + "<br/>"
+          + "<b>List of Neighbours:</b> " + name_of_adjacent_nodes.join(", "))
+      .style("font-size", "12px");
 }
 
 function draw_histogram(centrality_data, width, height){
@@ -710,7 +709,7 @@ ensureBrushSkeleton();
 
   // if we have "most connected nodes" data, we reset find_node_id
   // if (most_connected_nodes_data)
-  //   find_node_id = -1;
+  //    find_node_id = -1;
 
   //g.selectAll(".brush").remove();
   count = count + 1;
@@ -754,22 +753,22 @@ ensureBrushSkeleton();
 
   // // define brush
   // brush = d3.brush().on("end", function() {
-  //   brushFlag = 1;
-  //   var s = d3.brushSelection(this);
-  //   if (!s) {
-  //     if (!idleTimeout) return idleTimeout = setTimeout(idled, idleDelay);
-  //     xScale.domain(xExtent);
-  //     yScale.domain(yExtent);
-  //   } else {
-  //     xScale.domain([s[0][0], s[1][0]].map(xScale.invert, xScale));
-  //     yScale.domain([s[1][1], s[0][1]].map(yScale.invert, yScale));
-  //     g.select(".brush").call(brush.move, null);
-  //   }
-  //   var t = g.transition().duration(750);
-  //   g.selectAll("circle").transition(t)
+  //    brushFlag = 1;
+  //    var s = d3.brushSelection(this);
+  //    if (!s) {
+  //      if (!idleTimeout) return idleTimeout = setTimeout(idled, idleDelay);
+  //      xScale.domain(xExtent);
+  //      yScale.domain(yExtent);
+  //    } else {
+  //      xScale.domain([s[0][0], s[1][0]].map(xScale.invert, xScale));
+  //      yScale.domain([s[1][1], s[0][1]].map(yScale.invert, yScale));
+  //      g.select(".brush").call(brush.move, null);
+  //    }
+  //    var t = g.transition().duration(750);
+  //    g.selectAll("circle").transition(t)
   //       .attr("cx", function(d) { return xScale(d.x); })
   //       .attr("cy", function(d) { return yScale(d.y); });
-  //   d3.selectAll(".spiral_edges").style("stroke-opacity", 0);
+  //    d3.selectAll(".spiral_edges").style("stroke-opacity", 0);
   // });
 
   // // call brush
@@ -1076,7 +1075,7 @@ if (false) { // set to true only if you really want both brush and zoom
                         d3.selectAll(".spiral_edges").style("stroke-opacity", 0);
                       }
                   })
-                  
+                 
 .on("mouseover", function(event, d) {
     // --- Standard tooltip logic (unchanged) ---
     div.transition()
@@ -1107,15 +1106,15 @@ if (false) { // set to true only if you really want both brush and zoom
     // --- CORRECTED FUNCTION CALLS ---
     // 1. Update the community textbox with detailed info
     draw_textbox(
-        communityNodesData,             // Data for all nodes in the group
-        adjacent_nodes,                 // List of all collaborator IDs
-        activeNodeId,                   // The ID of the hovered node
-        intraCommunityCollaborators,    // Count of collaborators within the group
-        d.centrality,                   // Degree (total collaborators)
+        communityNodesData,            // Data for all nodes in the group
+        adjacent_nodes,                // List of all collaborator IDs
+        activeNodeId,                  // The ID of the hovered node
+        intraCommunityCollaborators,   // Count of collaborators within the group
+        d.centrality,                  // Degree (total collaborators)
         d.betwness,
         d.closeness,
         d.eign,
-        d.name                          // Name of the hovered author
+        d.name                         // Name of the hovered author
     );
 
     // 2. Update the community adjacency matrix
@@ -1192,8 +1191,15 @@ if (false) { // set to true only if you really want both brush and zoom
                       return;
                     }
 
-                    // Build the *original* community’s data from this timeslice.
-                    let originalCommData = global_data.filter(n => n.community === commID);
+                    // Build the *original* community’s data from this timeslice
+                    // and freeze the colour each node has *right now*.
+                    let originalCommData = global_data
+                      .filter(n => n.community === commID)
+                      .map(n => ({
+                        ...n,
+                        frozenColor: getColorBasedOnFlags(n)
+                      }));
+
                     let originalCommLinks = node_to_node_link_data.filter(e => {
                       let nodeIDs = new Set(originalCommData.map(n => n.node));
                       return nodeIDs.has(e.source) && nodeIDs.has(e.target);
@@ -1204,7 +1210,8 @@ if (false) { // set to true only if you really want both brush and zoom
                       yearRange: clickedYearRange,
                       communityID: commID,
                       originalNodeData: originalCommData,
-                      originalLinkData: originalCommLinks
+                      originalLinkData: originalCommLinks,
+                      randomColorActive: false
                     };
 
                     // If we already have 3 selected, remove the oldest.
@@ -1366,7 +1373,7 @@ if (false) { // set to true only if you really want both brush and zoom
 
   let text_for_legend;
   if (densityColFlag ==1) text_for_legend = "Density";
-  else if (degreeColFlag==1) text_for_legend =  "   Degree";
+  else if (degreeColFlag==1) text_for_legend =   "   Degree";
   else if (closenessColFlag==1) text_for_legend=  "   Closeness";
   else if (betweennessColFlag==1) text_for_legend =  "Betweeness";
   else if (eignColFlag==1) text_for_legend = "Eigen";
@@ -1784,7 +1791,7 @@ function highlightMatrixNode(nodeID) {
   colLabels.filter(d => neighborIDs.has(d.node))
            .style("fill","blue")
            .style("font-weight","bold");
-           //raise();
+           //.raise();
 }
 
 
@@ -1805,8 +1812,8 @@ function getRandomColorForTimesliceCommunity(timeslice, commID) {
 }
 
 /**
-++  * Consistent colour for an edge or node type, shared by main view and side widgets
-++  */
+ * Consistent colour for an edge or node type, shared by main view and side widgets
+ */
  function getEdgeColorByType(t){
    if (t === "incoming")  return "#0571b0";   // blue
    if (t === "outgoing")  return "#f4a582";   // orange
@@ -1873,11 +1880,11 @@ function updateCommunitySpiralSideWidget () {
     /* ───── a) outer <div> + header row ─────────────────────────────────── */
     const subDivID   = `sideSpiralDiv_${index}`;
     const sideDiv    = d3.select("#communitySideContainer")
-                         .append("div")
-                         .attr("id", subDivID)
-                         .style("border", "1px solid #ccc")
-                         .style("padding", "6px")
-                         .style("margin-bottom", "10px");
+                           .append("div")
+                           .attr("id", subDivID)
+                           .style("border", "1px solid #ccc")
+                           .style("padding", "6px")
+                           .style("margin-bottom", "10px");
 
     const headerRow  = sideDiv.append("div")
                               .style("display", "flex")
@@ -1982,12 +1989,21 @@ function updateCommunitySpiralSideWidget () {
                           .style("stroke", "#333").style("stroke-width", 1)
                           .style("opacity", d => currentNodeMap.has(d.node) ? 1 : 0.25)
                           .style("fill", d => {
+                            // 1) Random mode: colour by community, but using the original yearRange
+                            if (selObj.randomColorActive) {
+                              const ts = selObj.yearRange || "UnknownTimeslice";
+                              return getRandomColorForTimesliceCommunity(ts, d.community);
+                            }
+
+                            // 2) Normal mode: use the frozen colour from the year of selection
+                            if (d.frozenColor) {
+                              return d.frozenColor;
+                            }
+
+                            // 3) Backwards-compat fallback if frozenColor is missing
                             if (!currentNodeMap.has(d.node)) return "gray";
                             const cur = currentNodeMap.get(d.node);
-                            const ts  = window.currentYearRange || "UnknownTimeslice";
-                            return (selObj.randomColorActive)
-                                   ? getRandomColorForTimesliceCommunity(ts, cur.community)
-                                   : getColorBasedOnFlags(cur);
+                            return getColorBasedOnFlags(cur);
                           });
 
     /* ───── f) bounding-box fit + zoom behaviour ──────────────────────── */
@@ -1999,8 +2015,8 @@ function updateCommunitySpiralSideWidget () {
     gRoot.attr("transform", fit);
 
     const zoomBehaviour = d3.zoom()
-                            .scaleExtent([0.5, 10])
-                            .on("zoom", ev => gRoot.attr("transform", ev.transform));
+                              .scaleExtent([0.5, 10])
+                              .on("zoom", ev => gRoot.attr("transform", ev.transform));
     svg.call(zoomBehaviour).call(zoomBehaviour.transform, fit);
 
     /* ───── g) zoom buttons ( + / – / reset ) ─────────────────────────── */
@@ -2027,12 +2043,14 @@ function updateCommunitySpiralSideWidget () {
           .on("change", function () {
             selObj.randomColorActive = this.checked;
             nodeSel.style("fill", d => {
+              if (selObj.randomColorActive) {
+                const ts = selObj.yearRange || "UnknownTimeslice";
+                return getRandomColorForTimesliceCommunity(ts, d.community);
+              }
+              if (d.frozenColor) return d.frozenColor;
               if (!currentNodeMap.has(d.node)) return "gray";
               const cur = currentNodeMap.get(d.node);
-              const ts  = window.currentYearRange || "UnknownTimeslice";
-              return (selObj.randomColorActive)
-                     ? getRandomColorForTimesliceCommunity(ts, cur.community)
-                     : getColorBasedOnFlags(cur);
+              return getColorBasedOnFlags(cur);
             });
           });
     chkRow.append("label")
@@ -2160,30 +2178,30 @@ function getColorBasedOnFlags(nodeObj) {
 
 
 function opt_no_of_nodes(community_count) {
-	let range_for_same_point = -1;
-	let next_range_for_same_point = 1;
-	let part_of_sprial_considered_same = 7*12;
-	let set_of_disticnt_ranges = new Set();
-	let optimal_no_of_nodes = 0;
+    let range_for_same_point = -1;
+    let next_range_for_same_point = 1;
+    let part_of_sprial_considered_same = 7*12;
+    let set_of_disticnt_ranges = new Set();
+    let optimal_no_of_nodes = 0;
 
-	while (range_for_same_point != next_range_for_same_point) {
-		range_for_same_point = next_range_for_same_point;
-		set_of_disticnt_ranges.add(range_for_same_point);
-		let set_of_node_counts = new Set();
-		community_count.forEach(function(d){
-			set_of_node_counts.add(range_for_same_point*Math.floor(d.count/range_for_same_point));
-		});
-		var sum = 0;
-		set_of_node_counts.forEach(function(num) { sum += num; });
+    while (range_for_same_point != next_range_for_same_point) {
+        range_for_same_point = next_range_for_same_point;
+        set_of_disticnt_ranges.add(range_for_same_point);
+        let set_of_node_counts = new Set();
+        community_count.forEach(function(d){
+            set_of_node_counts.add(range_for_same_point*Math.floor(d.count/range_for_same_point));
+        });
+        var sum = 0;
+        set_of_node_counts.forEach(function(num) { sum += num; });
 
-		let average = Math.floor(sum / set_of_node_counts.size);
-		next_range_for_same_point = Math.floor(average/part_of_sprial_considered_same);
-		optimal_no_of_nodes = average;
-		if (set_of_disticnt_ranges.has(next_range_for_same_point)) {
-			break;
-		}
-	}
-	return optimal_no_of_nodes;
+        let average = Math.floor(sum / set_of_node_counts.size);
+        next_range_for_same_point = Math.floor(average/part_of_sprial_considered_same);
+        optimal_no_of_nodes = average;
+        if (set_of_disticnt_ranges.has(next_range_for_same_point)) {
+            break;
+        }
+    }
+    return optimal_no_of_nodes;
 }
 
 
