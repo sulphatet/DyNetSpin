@@ -1,2 +1,2 @@
 # DyNetSpin
-Code base for "DyNetSpin: Analyzing Community and Node Evolution Patterns in Dynamic Networks"
+Code base for "DyNetSpin: Analysis of Dynamic Networks via Spiral Layouts"
