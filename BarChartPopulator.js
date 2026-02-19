@@ -172,38 +172,123 @@ window.addEventListener("load", () => {
 });
 
 
-function renderYearButtons(datasetKey){
+/* ─────────────────────────────────────────────────────
+   RENDER YEAR BUTTONS (Horizontal Scroll + Verbose)
+   ───────────────────────────────────────────────────*/
+function renderYearButtons(datasetKey) {
   const ds = DATASETS_CONFIG[datasetKey];
-  const slices = (ds?.slices || []).filter(s => s.enabled !== false);
+  const rawSlices = (ds?.slices || []).filter(s => s.enabled !== false);
+  
+  // Update global current slices
+  window.currentSlices = [];
+  rawSlices.forEach(s => {
+    window.currentSlices.push(s.label);
+    if(s.children) s.children.forEach(c => window.currentSlices.push(c.label));
+  });
 
-  window.currentSlices = slices.map(s => s.label);
+  const container = d3.select("#year-buttons");
+  container.selectAll("*").remove();
 
-  yearContainer.selectAll("*").remove();
+  // --- 1. Create Layout Containers ---
+  // Row for Top Level (Groups/Years)
+  const parentRow = container.append("div")
+    .attr("class", "timeline-row mb-1 border-bottom border-secondary pb-1");
+    
+  // Row for Sub Level (Specific Slices) - Hidden initially
+  const childRow = container.append("div")
+    .attr("class", "timeline-row")
+    .style("display", "none");
 
-  const yBtns = yearContainer.selectAll("button")
-    .data(slices, s => s.label)
-    .enter()
-    .append("button")
-      .attr("class","btn btn-outline-secondary btn-sm mx-1")
-      .text(s => s.label)
-      .on("click", function(event, slice){
-        yearContainer.selectAll("button").classed("active",false);
-        d3.select(this).classed("active",true);
+  // --- 2. Render Logic ---
+  
+  // Helper to render child buttons into the childRow
+  const renderChildren = (children) => {
+    childRow.selectAll("*").remove(); // Clear previous children
+    childRow.style("display", "flex"); // Show row
 
-        // Keep the UI label as the current year range
-        window.currentYearRange = slice.label;
+    children.forEach(child => {
+      const btn = childRow.append("button")
+        .attr("class", "btn-slice-verbose mx-1")
+        .on("click", function(event) {
+            // Visual Active State (Clear all active in child row)
+            childRow.selectAll("button").classed("active-slice", false);
+            d3.select(this).classed("active-slice", true);
 
-        // Use the actual directory name for loading
-        loadData(datasetKey, slice.dir);
-      });
+            // Load Data
+            window.currentYearRange = child.label;
+            loadData(datasetKey, child.dir);
+        });
 
-  if (slices.length) yearContainer.select("button").dispatch("click");
+      // Verbose Content Construction
+      // If your dataset has extra metadata, use it here. 
+      // Defaulting to "Time Slice" + Label for verbosity.
+      const mainText = btn.append("span").attr("class", "slice-main-text").text(child.label);
+      const subText = btn.append("span").attr("class", "slice-sub-text").text("Select Interval");
+    });
+
+    // Auto-click the first child in this group to load data immediately
+    const firstChild = childRow.select("button");
+    if(!firstChild.empty()) firstChild.dispatch("click");
+  };
+
+  // Loop through Data
+  rawSlices.forEach((sliceObj, index) => {
+    if (sliceObj.children && sliceObj.children.length > 0) {
+      
+      // --- PARENT BUTTON (Grouping) ---
+      const parentBtn = parentRow.append("button")
+        .attr("class", "btn btn-sm btn-outline-light btn-group-parent")
+        .html(`${sliceObj.label} <span class="badge bg-secondary text-light ms-1" style="font-size:0.6em">${sliceObj.children.length}</span>`)
+        .on("click", function() {
+          // Highlight Parent
+          parentRow.selectAll("button").classed("active", false);
+          parentRow.selectAll("button").classed("btn-light", false);
+          parentRow.selectAll("button").classed("btn-outline-light", true);
+          
+          d3.select(this)
+            .classed("btn-outline-light", false)
+            .classed("btn-light", true)
+            .classed("active", true);
+
+          // Render the specific children for this group
+          renderChildren(sliceObj.children);
+        });
+
+    } else {
+      // --- FLAT SLICE (No Children) ---
+      // Render directly into parent row acting as a standalone button
+      parentRow.append("button")
+        .attr("class", "btn btn-sm btn-outline-warning btn-group-parent")
+        .text(sliceObj.label)
+        .on("click", function() {
+           // Clear children row if switching to flat slice
+           childRow.style("display", "none");
+           childRow.selectAll("*").remove();
+
+           parentRow.selectAll("button").classed("active", false);
+           d3.select(this).classed("active", true);
+
+           window.currentYearRange = sliceObj.label;
+           loadData(datasetKey, sliceObj.dir);
+        });
+    }
+  });
+
+  // --- 3. Robust Auto-Clicker ---
+  // We prioritize clicking the first button in the Parent Row.
+  const initialBtn = parentRow.select("button");
+  if (!initialBtn.empty()) {
+    initialBtn.dispatch("click");
+  } else {
+    console.warn("No time slices found for this dataset.");
+  }
 }
 
 
 /* ─────────────────────────────────────────────────────
    LOAD cross-slice cache for the *selected dataset*
    ───────────────────────────────────────────────────*/
+   
 function loadAllYearsData(datasetKey){
   allYearsNodeData  = {};
   allYearsNodeLinks = {};
