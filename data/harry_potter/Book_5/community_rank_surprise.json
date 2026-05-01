@@ -1,0 +1,18 @@
+{
+  "1": {
+    "rank_surprise": 0.0,
+    "is_anomalous": false
+  },
+  "3": {
+    "rank_surprise": 0.3333,
+    "is_anomalous": false
+  },
+  "2": {
+    "rank_surprise": 0.3333,
+    "is_anomalous": false
+  },
+  "0": {
+    "rank_surprise": 0.6667,
+    "is_anomalous": false
+  }
+}
