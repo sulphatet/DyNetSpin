@@ -23,9 +23,19 @@
   },
   "enron_ipr": {
   "label": "enron_ipr",
-  "enabled": true,
+  "enabled": false,
   "slices": [
     { "label": "1998", "dir": "1998", "enabled": true },
+    { "label": "1999", "dir": "1999", "enabled": true },
+    { "label": "2000", "dir": "2000", "enabled": true },
+    { "label": "2001", "dir": "2001", "enabled": true },
+    { "label": "2002", "dir": "2002", "enabled": true }
+  ]
+},
+"enron_ipr_new": {
+  "label": "Enron Dataset",
+  "enabled": true,
+  "slices": [
     { "label": "1999", "dir": "1999", "enabled": true },
     { "label": "2000", "dir": "2000", "enabled": true },
     { "label": "2001", "dir": "2001", "enabled": true },

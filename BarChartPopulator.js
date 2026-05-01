@@ -12,6 +12,14 @@ let node_to_node_link_data;
 let DATASETS_CONFIG = null;     // loaded from JSON
 let DATASET_KEYS = [];          // ordered list of enabled dataset keys
 
+// ── Log-Hybrid α state ──────────────────────────────────────────
+window.currentAlpha         = 0.6;    // current α (slider value)
+window.currentBestAlpha     = 0.6;    // auto-computed best α
+window.currentParetoResults = [];     // full sweep results [{alpha, tau, rho}]
+window.currentRhoFloor      = 0.70;   // computed ρ floor
+window.sliceDataForLogHybrid = [];    // raw slice data for the engine
+window.allSliceSortedCounts  = [];    // sorted counts at current α (all slices)
+window.currentSortedCountsForSlice = null; // sorted counts for the active slice
 
 // Which dataset and year slice are currently visualised
 window.currentDataset    = null;   // e.g. "data_vispub"
@@ -20,6 +28,7 @@ window.currentYearRange  = null;   // e.g. "2005-2009"
 // Caches for ALL year-slices – used by drawNodeTimesliceChart (File 1)
 let allYearsNodeData  = {};  // { yearRange : { nodeID : {centrality,type} } }
 let allYearsNodeLinks = {};  // { yearRange : [ {source,target,type} ] }
+let allYearsCountData = {};  // { yearRange : [ {community, count} ] }  ← for engine
 
 /* ─────────────────────────────────────────────────────
    HELPER CHART DRAWERS – unchanged from your original
@@ -161,7 +170,10 @@ window.addEventListener("load", () => {
           d3.select(this).classed("active",true);
 
           window.currentDataset = key;
-          loadAllYearsData(key).then(() => renderYearButtons(key));
+          loadAllYearsData(key).then(() => {
+            runAlphaSelection(key);
+            renderYearButtons(key);
+          });
           loadAuthorMapping();
         });
 
@@ -172,126 +184,50 @@ window.addEventListener("load", () => {
 });
 
 
-/* ─────────────────────────────────────────────────────
-   RENDER YEAR BUTTONS (Horizontal Scroll + Verbose)
-   ───────────────────────────────────────────────────*/
-function renderYearButtons(datasetKey) {
+function renderYearButtons(datasetKey){
   const ds = DATASETS_CONFIG[datasetKey];
-  const rawSlices = (ds?.slices || []).filter(s => s.enabled !== false);
-  
-  // Update global current slices
-  window.currentSlices = [];
-  rawSlices.forEach(s => {
-    window.currentSlices.push(s.label);
-    if(s.children) s.children.forEach(c => window.currentSlices.push(c.label));
-  });
+  const slices = (ds?.slices || []).filter(s => s.enabled !== false);
 
-  const container = d3.select("#year-buttons");
-  container.selectAll("*").remove();
+  window.currentSlices = slices.map(s => s.label);
 
-  // --- 1. Create Layout Containers ---
-  // Row for Top Level (Groups/Years)
-  const parentRow = container.append("div")
-    .attr("class", "timeline-row mb-1 border-bottom border-secondary pb-1");
-    
-  // Row for Sub Level (Specific Slices) - Hidden initially
-  const childRow = container.append("div")
-    .attr("class", "timeline-row")
-    .style("display", "none");
+  yearContainer.selectAll("*").remove();
 
-  // --- 2. Render Logic ---
-  
-  // Helper to render child buttons into the childRow
-  const renderChildren = (children) => {
-    childRow.selectAll("*").remove(); // Clear previous children
-    childRow.style("display", "flex"); // Show row
+  const yBtns = yearContainer.selectAll("button")
+    .data(slices, s => s.label)
+    .enter()
+    .append("button")
+      .attr("class","btn btn-outline-secondary btn-sm mx-1")
+      .text(s => s.label)
+      .on("click", function(event, slice){
+        yearContainer.selectAll("button").classed("active",false);
+        d3.select(this).classed("active",true);
 
-    children.forEach(child => {
-      const btn = childRow.append("button")
-        .attr("class", "btn-slice-verbose mx-1")
-        .on("click", function(event) {
-            // Visual Active State (Clear all active in child row)
-            childRow.selectAll("button").classed("active-slice", false);
-            d3.select(this).classed("active-slice", true);
+        // Keep the UI label as the current year range
+        window.currentYearRange = slice.label;
 
-            // Load Data
-            window.currentYearRange = child.label;
-            loadData(datasetKey, child.dir);
-        });
+        // Use the actual directory name for loading
+        loadData(datasetKey, slice.dir);
 
-      // Verbose Content Construction
-      // If your dataset has extra metadata, use it here. 
-      // Defaulting to "Time Slice" + Label for verbosity.
-      const mainText = btn.append("span").attr("class", "slice-main-text").text(child.label);
-      const subText = btn.append("span").attr("class", "slice-sub-text").text("Select Interval");
-    });
+        // Toggle alpha warning if it's the first slice
+        const isFirstSlice = (window.currentSlices.indexOf(slice.label) === 0);
+        const warningEl = document.getElementById('alphaFirstSliceWarning');
+        if (warningEl) {
+          if (isFirstSlice) warningEl.classList.remove('d-none');
+          else warningEl.classList.add('d-none');
+        }
+      });
 
-    // Auto-click the first child in this group to load data immediately
-    const firstChild = childRow.select("button");
-    if(!firstChild.empty()) firstChild.dispatch("click");
-  };
-
-  // Loop through Data
-  rawSlices.forEach((sliceObj, index) => {
-    if (sliceObj.children && sliceObj.children.length > 0) {
-      
-      // --- PARENT BUTTON (Grouping) ---
-      const parentBtn = parentRow.append("button")
-        .attr("class", "btn btn-sm btn-outline-light btn-group-parent")
-        .html(`${sliceObj.label} <span class="badge bg-secondary text-light ms-1" style="font-size:0.6em">${sliceObj.children.length}</span>`)
-        .on("click", function() {
-          // Highlight Parent
-          parentRow.selectAll("button").classed("active", false);
-          parentRow.selectAll("button").classed("btn-light", false);
-          parentRow.selectAll("button").classed("btn-outline-light", true);
-          
-          d3.select(this)
-            .classed("btn-outline-light", false)
-            .classed("btn-light", true)
-            .classed("active", true);
-
-          // Render the specific children for this group
-          renderChildren(sliceObj.children);
-        });
-
-    } else {
-      // --- FLAT SLICE (No Children) ---
-      // Render directly into parent row acting as a standalone button
-      parentRow.append("button")
-        .attr("class", "btn btn-sm btn-outline-warning btn-group-parent")
-        .text(sliceObj.label)
-        .on("click", function() {
-           // Clear children row if switching to flat slice
-           childRow.style("display", "none");
-           childRow.selectAll("*").remove();
-
-           parentRow.selectAll("button").classed("active", false);
-           d3.select(this).classed("active", true);
-
-           window.currentYearRange = sliceObj.label;
-           loadData(datasetKey, sliceObj.dir);
-        });
-    }
-  });
-
-  // --- 3. Robust Auto-Clicker ---
-  // We prioritize clicking the first button in the Parent Row.
-  const initialBtn = parentRow.select("button");
-  if (!initialBtn.empty()) {
-    initialBtn.dispatch("click");
-  } else {
-    console.warn("No time slices found for this dataset.");
-  }
+  if (slices.length) yearContainer.select("button").dispatch("click");
 }
 
 
 /* ─────────────────────────────────────────────────────
    LOAD cross-slice cache for the *selected dataset*
    ───────────────────────────────────────────────────*/
-   
 function loadAllYearsData(datasetKey){
   allYearsNodeData  = {};
   allYearsNodeLinks = {};
+  allYearsCountData = {};
 
   const ds = DATASETS_CONFIG[datasetKey];
   const slices = (ds?.slices || []).filter(s => s.enabled !== false);
@@ -325,10 +261,63 @@ function loadAllYearsData(datasetKey){
         allYearsNodeLinks[yearLabel] = edges;
       });
 
-    promises.push(pNodes, pEdges);
+    // Also load community counts for the Log-Hybrid engine
+    let pCounts = d3.csv(`data/${datasetKey}/${yearDir}/commuity_count.csv`)
+      .then(csvData => {
+        const counts = csvData.map(r => ({
+          community: +(r.community !== undefined ? r.community :
+                       r.Community !== undefined ? r.Community : 0),
+          count:     +(r.count !== undefined ? r.count :
+                       r.Count !== undefined ? r.Count : 0)
+        }));
+        allYearsCountData[yearLabel] = counts;
+      });
+
+    promises.push(pNodes, pEdges, pCounts);
   });
 
   return Promise.all(promises);
+}
+
+/**
+ * Run the Pareto α selection after all year data is loaded.
+ * Sets globals: currentBestAlpha, currentAlpha, allSliceSortedCounts, etc.
+ */
+function runAlphaSelection(datasetKey) {
+  // Build sliceData for the engine
+  window.sliceDataForLogHybrid = buildSliceData(
+    datasetKey, DATASETS_CONFIG, allYearsNodeData, allYearsCountData
+  );
+
+  if (window.sliceDataForLogHybrid.length < 2) {
+    console.warn('[Pareto] Not enough slices for α selection, defaulting to 0.6');
+    window.currentBestAlpha = 0.6;
+    window.currentAlpha = 0.6;
+    window.currentParetoResults = [];
+    window.currentRhoFloor = 0.70;
+    window.allSliceSortedCounts = [];
+    return;
+  }
+
+  // Run the sweep
+  var result = findBestAlpha(window.sliceDataForLogHybrid, 0.05);
+
+  window.currentBestAlpha     = result.bestAlpha;
+  window.currentAlpha         = result.bestAlpha;
+  window.currentParetoResults = result.paretoResults;
+  window.currentRhoFloor      = result.rhoFloor;
+
+  // Pre-compute sorted counts for all slices at the best α
+  window.allSliceSortedCounts = logHybridSort(
+    window.sliceDataForLogHybrid, result.bestAlpha
+  );
+
+  console.log('[Pareto] Dataset "' + datasetKey + '": α*=' +
+              result.bestAlpha.toFixed(2) + ', ρ_floor=' +
+              result.rhoFloor.toFixed(3));
+
+  // Sync the slider UI (if function exists — it's defined in settings1.js)
+  if (typeof syncAlphaSliderUI === 'function') syncAlphaSliderUI();
 }
 
 /* ─────────────────────────────────────────────────────
@@ -352,6 +341,18 @@ function loadData(datasetKey, yearDir){
     d3.csv(`data/${datasetKey}/${yearDir}/commuity_count.csv`)
   ])
   .then(dataArr=>{
+    // ── Use engine-sorted community counts if available ──
+    const currentSliceIndex = window.currentSlices.indexOf(window.currentYearRange);
+    if (window.allSliceSortedCounts.length > 0 && currentSliceIndex >= 0 &&
+        window.allSliceSortedCounts[currentSliceIndex]) {
+      // Replace the raw commuity_count.csv data (dataArr[6]) with engine-sorted data
+      const sorted = window.allSliceSortedCounts[currentSliceIndex];
+      // Convert to the CSV-row format the rest of the code expects
+      const sortedCSV = sorted.map(r => ({ community: String(r.community), count: String(r.count) }));
+      dataArr[6] = sortedCSV;
+      window.currentSortedCountsForSlice = sorted;
+    }
+
     showdata_spiral_community_chart(dataArr);
     updateCommunitySpiralSideWidget();
     autoZoomOnSliceChangeV2({ massThreshold: 0.95, maxGroups: 5, pad: 40, duration: 400 });
@@ -378,7 +379,13 @@ function autoZoomOnSliceChangeV2({
   maxScale            = 6.0,   // clip extreme zoom-ins
   singleMaxScale      = 3.0    // optional softer cap if only one community survives
 } = {}) {
-  if (!selectedCommunitySpirals.length || !window.global_data) return;
+  if (!selectedCommunitySpirals.length || !window.global_data) {
+    // If nothing is selected, fall back to fitting the entire spiral nicely to the screen
+    if (window.SpinTrixMainZoom && window.SpinTrixMainZoom.fitAll) {
+      window.SpinTrixMainZoom.fitAll(400, 40);
+    }
+    return;
+  }
 
   const svg = d3.select("#chart").node().tagName.toLowerCase()==="svg"
               ? d3.select("#chart")
@@ -441,7 +448,12 @@ function autoZoomOnSliceChangeV2({
     });
   });
 
-  if (!selections.length) return;
+  if (!selections.length) {
+    if (window.SpinTrixMainZoom && window.SpinTrixMainZoom.fitAll) {
+      window.SpinTrixMainZoom.fitAll(400, 40);
+    }
+    return;
+  }
 
   // ---- weighted centroid & bbox ----
   const Wsum = d3.sum(selections, s => s.weight) || 1;

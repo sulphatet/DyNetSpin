@@ -148,7 +148,7 @@ function adoptLooseChildren() {
 
 
 
-function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, eig, node_name) {
+function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, eig, node_name, anchor_name) {
   var centrality_data = data.map(function(d){return d.centrality});
 
   var margin = {top: 10, right: 30, bottom: 30, left: 40},
@@ -176,6 +176,12 @@ function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, ei
   let groupDensity = (data[0]) ? data[0].density : "N/A";
   let groupSize = data.length;
 
+  // Build optional 'Community Seeded on' line for enron_ipr_new
+  let seeded_html = "";
+  if (anchor_name && anchor_name !== "" && anchor_name !== "None" && anchor_name !== "undefined") {
+    seeded_html = "<b style='color:#ca0020'>Community Seeded on: </b>" + anchor_name + "<br/><br/>";
+  }
+
   // append the summary to #community_textbox
   d3.select("#community_textbox")
       .html("<b>Name: </b>"+ node_name +"<br/>"
@@ -185,6 +191,7 @@ function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, ei
           + "<b>Edge-density in Group:</b> "+ groupDensity + "<br/><br/>"
           + "<b>Total Neighbours:</b> " + adjacent_nodes.length + "<br/>"
           + "<b>Neighbours within Group:</b> " + count + "<br/>"
+          + seeded_html
           + "<b>Neighbours in other Group:</b> " + inter_community_connections + "<br/>"
           + "<b>List of Neighbours:</b> " + name_of_adjacent_nodes.join(", "))
       .style("font-size", "12px");
@@ -283,21 +290,24 @@ function find_node_draw_spiral(new_data1){
   var width = 400,
       height = 300;
 
+  const nPts = new_data1.length || 1;
+  // Scale coils so the arc is always a full Archimedean spiral, not a sliver
+  const coils_dyn  = Math.max(2, Math.ceil(nPts / 12));  // ~12 nodes per revolution
+  const sides_dyn  = nPts;                                // one step per node
+  const radius_dyn = 120;                                 // fits within 300px container
+
   let centerX = 150,
       centerY = 150,
-      radius = 250,
-      sides = 1000,
-      coils = 20,
       rotation = 0;
-  let count =0;
-  let awayStep = radius/sides;
-  let aroundStep = coils/sides;
-  let aroundRadians = aroundStep * 2 * 3.14;
-  rotation *= 2 * 3.14;
+  let count = 0;
+  let awayStep   = radius_dyn / sides_dyn;
+  let aroundStep = coils_dyn  / sides_dyn;
+  let aroundRadians = aroundStep * 2 * Math.PI;
+  rotation *= 2 * Math.PI;
 
   let no_of_points_in_community = new_data1.length;
   let xCoordinateOfActiveNode_new, yCoordinateOfActiveNode_new;
-  let node_name, deg, clo, bet, eig, volatility;
+  let node_name, deg, clo, bet, eig, volatility, anchor_name_found;
 
   for (let i=0; i<no_of_points_in_community;i++){
       let away = i * awayStep;
@@ -316,6 +326,7 @@ function find_node_draw_spiral(new_data1){
         bet = new_data1[i]['betwness'];
         eig = new_data1[i]['eign'];
         volatility = new_data1[i]['volatility'];
+        anchor_name_found = new_data1[i]['anchor_name'];
       }
   }
 
@@ -403,7 +414,7 @@ function find_node_draw_spiral(new_data1){
                   });
 
   var centrality_data = new_data1.map(function(d){return d.centrality});
-  draw_textbox(new_data1, adjacent_nodes_find_node, find_node_id, count, deg, bet, clo, eig, node_name);
+  draw_textbox(new_data1, adjacent_nodes_find_node, find_node_id, count, deg, bet, clo, eig, node_name, anchor_name_found);
 }
 
 // draw spiral in side window on click community
@@ -429,8 +440,8 @@ function draw_spiral(new_data1, adjacent_nodes, activeNode) {
   // one “side” per node, so every node has its own step
   const sides    = nPoints;
 
-  // put ≈ 45 nodes per revolution; tweak to taste
-  const coils    = Math.ceil(nPoints / 45);
+  // put ≈ 15 nodes per revolution; ensure at least 2 full turns
+  const coils    = Math.max(2, Math.ceil(nPoints / 15));
 
   const awayStep     = radius / sides;
   const aroundStep   = coils  / sides;
@@ -439,7 +450,7 @@ function draw_spiral(new_data1, adjacent_nodes, activeNode) {
   /******************************************************************
    * 3 ▸ CALCULATE COORDINATES
    ******************************************************************/
-  let xActive, yActive, node_name, deg, clo, bet, eig, volatility;
+  let xActive, yActive, node_name, deg, clo, bet, eig, volatility, anchor_name_found;
 
   new_data1.forEach((d, i) => {
     const away   = (i + 0.5) * awayStep;          // 0.5 keeps the first node off the origin
@@ -456,7 +467,8 @@ function draw_spiral(new_data1, adjacent_nodes, activeNode) {
          closeness:  clo,
          betwness:   bet,
          eign:       eig,
-         volatility: volatility } = d);
+         volatility: volatility,
+         anchor_name: anchor_name_found } = d);
     }
   });
 
@@ -520,7 +532,7 @@ function draw_spiral(new_data1, adjacent_nodes, activeNode) {
    * 5 ▸ UPDATE INFO BOX
    ******************************************************************/
   draw_textbox(new_data1, adjacent_nodes, activeNode,
-               adjacent_nodes.length, deg, bet, clo, eig, node_name);
+               adjacent_nodes.length, deg, bet, clo, eig, node_name, anchor_name_found);
 }
 
 
@@ -533,6 +545,7 @@ function transform_data(data){
     density : parseFloat(d.density),
     volatility : parseFloat(d.volatility),
     name: d.name,
+    anchor_name: d.anchor_name,
     x : +d.x,
     y: +d.y,
     type: d.type
@@ -604,29 +617,88 @@ document.querySelectorAll("input[name='nodeFilter']").forEach(radio => {
   });
 });
 
+// ── Shared layout geometry constants ──────────────────────────────
+// COMM_NODE_RADIUS controls macro-layout spacing only (micro-layout uses its own fixed spiral).
+// It approximates the mini-spiral's actual visual extent: the spiral reaches ~0.15*N+15 px,
+// which sqrt-fits to c≈3 across the typical community size range.
+// Bounding circle: R_i = COMM_NODE_RADIUS * sqrt(N)  → ~21 px for N=50.
+// Small communities (N<10) will have actual visual extent > R_i, so they blend with neighbours —
+// this is intentional and reproduces the original blended-spiral appearance.
+const COMM_NODE_RADIUS = 7;   // community packing radius (px per sqrt-node)
+const MACRO_PADDING    = 20;   // minimum gap between community bounding circles (px)
+
+// ── Adaptive Arc-Length Macro-Layout ──────────────────────────────
+// Bounding radius per community:  R_i = COMM_NODE_RADIUS * sqrt(count_i)
+// Angular step:  delta_theta = (R_prev + R_i + MACRO_PADDING) / (rho * theta_prev)
+// Spiral:        r = rho * theta  (Archimedean)
+// rho is derived from the existing layout parameters so the spiral fills the
+// same screen area as before.  When all communities are equal-sized the arc
+// spacing between every adjacent pair is constant (= 2R + MACRO_PADDING),
+// which is strictly better than the old uniform-angular-step formula (whose
+// arc spacing grew linearly toward the periphery).
+
 function transform_graph_centers(data, height, width) {
   const nCommunities = data.length;
+  if (nCommunities === 0) return data;
 
-  // Dynamically adjust spiral radius based on available space
-  const maxRadius = Math.min(width, height) * 0.45;  // 90% of half-dimension
-  const centerX = width / 2;
-  const centerY = height / 2;
+  const centerX   = width  / 2;
+  const centerY   = height / 2;
+  const maxRadius = Math.min(width, height) * 0.45;
 
-  // Make spiral smoother when there are more communities
-  const sides = nCommunities;
-  const coils = Math.ceil(nCommunities / 16);         // 8 communities per loop
+  // rho: derived from the same heuristics as the old layout so overall scale
+  // is preserved across datasets of different sizes.
+  const coils         = Math.max(4, Math.ceil(nCommunities / 8));
+  const aroundRadians = (coils / nCommunities) * 2 * Math.PI;  // old step size
+  const awayStep      = maxRadius / nCommunities;
+  const rho           = awayStep / aroundRadians;               // r = rho * theta
 
-  const awayStep = maxRadius / sides;
-  const aroundStep = coils / sides;
-  const aroundRadians = aroundStep * 2 * Math.PI;
+  // string_to_numbers_graph_centers stores the count field as 'size', not 'count'.
+  const getSize    = d => d.size || d.count || 1;
+  const microAwayStep = 60 / 400; // mirrors computing_spiral_positions
+  const getVisualRadius = size => Math.min(size, 300) * microAwayStep
+                               + Math.max(0, size - 300) * (60 / 25000)
+                               + 100 * microAwayStep;  // the +100 offset
 
-  for (let i = 0; i < nCommunities; i++) {
-    const away = (i + 0.5) * awayStep;               // 0.5 offsets center
-    const around = (i + 0.5) * aroundRadians;
+  // theta0: place community 0 at r ≈ R_0 + MACRO_PADDING from the centre.
+  // Floor at one old step so we never start at or near the pole.
+  const R0  = getVisualRadius(getSize(data[0]));
+  let theta = Math.max((R0 + MACRO_PADDING) / rho, aroundRadians);
 
-    data[i].cx = centerX + Math.cos(around) * away;
-    data[i].cy = centerY + Math.sin(around) * away;
+  // Place community 0
+  data[0].cx = centerX + Math.cos(theta) * (rho * theta);
+  data[0].cy = centerY + Math.sin(theta) * (rho * theta);
+
+  // Place communities 1 … n-1
+  for (let i = 1; i < nCommunities; i++) {
+    const R_prev      = getVisualRadius(getSize(data[i - 1]));
+    const R_i         = getVisualRadius(getSize(data[i]));
+    const delta_theta = (R_prev + R_i + MACRO_PADDING) / (rho * theta);
+    theta            += delta_theta;
+
+    const r    = rho * theta;
+    data[i].cx = centerX + Math.cos(theta) * r;
+    data[i].cy = centerY + Math.sin(theta) * r;
   }
+  // ── NEW: rescale all computed cx/cy so they actually fit ──────────────
+  const allCx = data.map(d => d.cx);
+  const allCy = data.map(d => d.cy);
+  const xMin = d3.min(allCx), xMax = d3.max(allCx);
+  const yMin = d3.min(allCy), yMax = d3.max(allCy);
+
+  const dataW = Math.max(xMax - xMin, 1e-6);
+  const dataH = Math.max(yMax - yMin, 1e-6);
+  const targetDiam = maxRadius * 2 * 0.9; // 90% of the intended diameter
+
+  const scale = Math.min(targetDiam / dataW, targetDiam / dataH);
+
+  const midX = (xMin + xMax) / 2;
+  const midY = (yMin + yMax) / 2;
+
+  data.forEach(d => {
+    d.cx = centerX + (d.cx - midX) * scale;
+    d.cy = centerY + (d.cy - midY) * scale;
+  });
+  // ─────────────────────────────────────────────────────────────────────
 
   return data;
 }
@@ -639,50 +711,47 @@ function computing_spiral_positions(center_positions_spiral, data_points, height
       coils = 15,
       rotation = 0,
       sides = 400;
-  let awayStep = radius/sides;
-  let aroundStep = coils/sides;
+  let awayStep = radius / sides;
+  let aroundStep = coils / sides;
   let aroundRadians = aroundStep * 2 * 3.14;
   rotation *= 2 * 3.14;
 
   let newdata1 = [];
 
   center_positions_spiral.forEach(function(community_data){
-    // subset data for this community
-    let filtered_community= data_points.filter(function(d){
-      return d.community===community_data.community;
+    let filtered_community = data_points.filter(function(d){
+      return d.community === community_data.community;
     });
 
     //--- ADDED FOR LOCAL VOLATILITY CENTERING ---
     if (localVolatilityCenteringFlag == 1) {
-      // Reorder so that outandin => incoming => outgoing => neither
       let outandin = filtered_community.filter(d => d.type === "outandin");
       let incoming = filtered_community.filter(d => d.type === "incoming");
       let outgoing = filtered_community.filter(d => d.type === "outgoing");
-      let neither = filtered_community.filter(d =>
+      let neither  = filtered_community.filter(d =>
         d.type !== "outandin" && d.type !== "incoming" && d.type !== "outgoing"
       );
       filtered_community = outandin.concat(outgoing, incoming, neither);
     }
-    // now compute spiral positions, in the order they appear
+
     let no_of_points_in_community = filtered_community.length;
 
-    for (let i=0; i<no_of_points_in_community; i++){
+    for (let i = 0; i < no_of_points_in_community; i++) {
       let away, around;
       if (i < 300) {
-        away = (i+100) * awayStep;
-        around = (i+100) * aroundRadians + rotation;
+        away   = (i + 100) * awayStep;
+        around = (i + 100) * aroundRadians + rotation;
       } else {
         // for bigger communities
-        let new_awayStep = radius/25000;
-        let new_aroundStep = coils/25000;
+        let new_awayStep      = radius / 25000;
+        let new_aroundStep    = coils  / 25000;
         let new_aroundRadians = new_aroundStep * 2 * 3.14;
-
-        away = (299+100) * awayStep + ((i-299) * new_awayStep);
-        around = (299+100) * aroundRadians + ((i-299) * new_aroundRadians + rotation);
+        away   = (299 + 100) * awayStep      + ((i - 299) * new_awayStep);
+        around = (299 + 100) * aroundRadians + ((i - 299) * new_aroundRadians + rotation);
       }
 
-      filtered_community[i]['x'] = community_data.cx + Math.cos(around) * (away );
-      filtered_community[i]['y'] = community_data.cy + Math.sin(around) * (away);
+      filtered_community[i]['x'] = community_data.cx + Math.cos(around) * away;
+      filtered_community[i]['y'] = community_data.cy + Math.sin(around) * away;
     }
     newdata1 = newdata1.concat(filtered_community);
   });
@@ -815,6 +884,8 @@ if (false) { // set to true only if you really want both brush and zoom
   var newElements = node.enter()
                   .append("circle")
                   .attr("class", "happy")
+                  .attr("shape-rendering", "geometricPrecision")
+                  .attr("vector-effect", "non-scaling-stroke")
                   .attr("r", function(d){
                     if (d.node == find_node_id) return 4;
                     else return (highlightNodes.indexOf(d.node) !== -1) ? 3 : global_radius;
@@ -823,7 +894,7 @@ if (false) { // set to true only if you really want both brush and zoom
                     return globalHighlightNodesMap[d.node] || "none";
                   })
                   .style("stroke-width", function(d) {
-                    return globalHighlightNodesMap[d.node] ? 1 : 0;
+                    return globalHighlightNodesMap[d.node] ? 5 : 0;
                   })
                   .style("fill", function(d){
                     if (d.node == find_node_id) {
@@ -1082,6 +1153,8 @@ if (false) { // set to true only if you really want both brush and zoom
         .duration(200)
         .style("opacity", .9);
 
+
+
     div.html("<b>Name:</b> "+ d.name +"<br/>"
             + "<b>Node ID:</b> "+ d.node +"<br/>"
             + "<b>Group:</b> " + d.community + "<br/>"
@@ -1114,7 +1187,8 @@ if (false) { // set to true only if you really want both brush and zoom
         d.betwness,
         d.closeness,
         d.eign,
-        d.name                         // Name of the hovered author
+        d.name,                        // Name of the hovered author
+        d.anchor_name                  // Seed anchor name (enron_ipr_new only)
     );
 
     // 2. Update the community adjacency matrix
@@ -1244,7 +1318,7 @@ if (false) { // set to true only if you really want both brush and zoom
                         return globalHighlightNodesMap[n.node] || "none";
                       })
                       .style("stroke-width", function(n) {
-                        return globalHighlightNodesMap[n.node] ? 2 : 0;
+                        return globalHighlightNodesMap[n.node] ? 5 : 0;
                       });
 
                     // Now update the side widget with the persistent community spirals.
@@ -1398,11 +1472,15 @@ adoptLooseChildren();
 if (window.SpinTrixMainZoom) {
   window.SpinTrixMainZoom.setup();                 // safe/idempotent
   window.SpinTrixMainZoom.markNonScalingStrokes(); // keep line widths constant
-  if (!window.__fitOnceDone__) {
-    window.SpinTrixMainZoom.fitAll(300);           // includes off-canvas nodes
-    window.__fitOnceDone__ = true;
-  }
+  // if (!window.__fitOnceDone__) {
+  //   window.SpinTrixMainZoom.fitAll(300);           // includes off-canvas nodes
+  //   window.__fitOnceDone__ = true;
+  // }
+  window.SpinTrixMainZoom.fitAll(window.__fitOnceDone__ ? 0 : 300);
+  window.__fitOnceDone__ = true;
 }
+
+
 
 }
 
@@ -2085,6 +2163,7 @@ function updateCommunitySpiralSideWidget() {
     nodeSel
       .on("mouseover", function(event, d) {
         if (!currentNodeMap.has(d.node)) return; // skip extinct nodes
+        
 
         hoverInfo.text(`Name: ${d.name}  (id ${d.node})`);
 
@@ -2116,7 +2195,8 @@ function updateCommunitySpiralSideWidget() {
           curNode.betwness,
           curNode.closeness,
           curNode.eign,
-          curNode.name
+          curNode.name,
+          curNode.anchor_name
         );
         draw_spiral(commDataCur, neighbours, d.node);
         drawCommunityAdjMatrix(commDataCur, node_to_node_link_data);
@@ -2403,6 +2483,7 @@ window.SpinTrixMainZoom = (function () {
 
     // (re)bind zoom to the SVG (safe to call multiple times)
     svg.interrupt().call(zoom);
+    svg.style("overflow", "hidden");
     svg.style("touch-action", "none")
        .style("cursor", "grab")
        .on("mousedown.zoomCursor", () => svg.style("cursor", "grabbing"))

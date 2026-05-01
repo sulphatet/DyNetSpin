@@ -269,6 +269,52 @@
                   </ul>
                 </div>
               </li>
+
+              <!-- ── LOG-HYBRID ALPHA SECTION ─────────────────────── -->
+              <li>
+                <a class="nav-link px-3 sidebar-link" data-bs-toggle="collapse" href="#alpha-options">
+                  <span>Log-Hybrid α</span>
+                  <span class="ms-auto"><span class="right-icon"><i class="bi bi-chevron-down"></i></span></span>
+                </a>
+                <div class="collapse show" id="alpha-options">
+                  <ul class="navbar-nav ps-3">
+                    <li>
+                      <div class="d-flex justify-content-between align-items-center text-white mb-1">
+                        <label class="form-label text-white mb-0">
+                          α = <input type="text" id="textInputAlpha" value="0.60"
+                                     class="text-white bg-dark text-center" size="4" readonly>
+                        </label>
+                        <span class="badge bg-success" id="paretoLabel"
+                              title="Auto-selected via Pareto analysis">Auto ★</span>
+                      </div>
+                      <input type="range" class="form-range"
+                             min="0" max="1" step="0.05" id="AlphaSlider"
+                             onchange="updateAlpha(this.value)" value="0.60">
+                      <small class="text-muted d-block mt-1" id="alphaHint">
+                        Optimal for this dataset: α = 0.60
+                      </small>
+                      <small class="text-warning d-none mt-1" id="alphaFirstSliceWarning" style="font-size: 0.75rem;">
+                        <span class="info-icon text-warning border-warning" style="width:12px;height:12px;line-height:12px;font-size:8px;">i</span>
+                        α does not affect the first slice (no history).
+                      </small>
+                      <div class="mt-1">
+                        <span class="info-tooltip">
+                          <span class="info-icon">i</span>
+                          <span class="info-text" id="paretoInfo">
+                            <b>α Blending Parameter:</b><br>
+                            α=1.0: Rank by size only (clear layout, no history).<br>
+                            α=0.0: Rank by history only (max stability, cluttered).<br>
+                            <b>Auto</b> finds the α that maximises temporal stability
+                            without degrading radial clarity below ρ ≥ <span id="rhoFloorDisplay">0.70</span>.<br><br>
+                            <span id="paretoDetailsText">Loading sweep data...</span>
+                          </span>
+                        </span>
+                      </div>
+                    </li>
+                  </ul>
+                </div>
+              </li>
+
             </ul>
           </nav>
         </div>
@@ -405,6 +451,7 @@
       <script src="https://d3js.org/d3.v7.min.js"></script>
       <script type="text/javascript" src="fitting_data_to_spiral3.js"></script>
       <script type="text/javascript" src="barchart2.js"></script>
+      <script type="text/javascript" src="logHybridEngine.js"></script>
       <script type="text/javascript" src="BarChartPopulator.js"></script>
       <script type="text/javascript" src="settings1.js"></script>
       

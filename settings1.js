@@ -712,3 +712,157 @@ function colorNodesByEign(){
     show_table_data(global_data)
 
   }
+
+
+// ═══════════════════════════════════════════════════════════════
+//  LOG-HYBRID α SLIDER  (Component 3)
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Called when the user releases the α slider.
+ * Re-runs logHybridSort at the new α and rebuilds the spiral.
+ */
+function updateAlpha(val) {
+  val = parseFloat(val);
+  document.getElementById('textInputAlpha').value = val.toFixed(2);
+  window.currentAlpha = val;
+
+  // Update badge
+  var isAuto = Math.abs(val - window.currentBestAlpha) < 0.026; // within one step
+  var label = document.getElementById('paretoLabel');
+  if (label) {
+    label.textContent = isAuto ? 'Auto ★' : 'Manual';
+    label.className   = 'badge ' + (isAuto ? 'bg-success' : 'bg-secondary');
+  }
+
+  // Nothing to recompute if no engine data is loaded
+  if (!window.sliceDataForLogHybrid || window.sliceDataForLogHybrid.length < 2) return;
+
+  // Recompute sorted counts for ALL slices at the new α
+  window.allSliceSortedCounts = logHybridSort(
+    window.sliceDataForLogHybrid, val
+  );
+
+  // Find current slice index and apply
+  var sliceIndex = -1;
+  if (window.currentSlices && window.currentYearRange) {
+    sliceIndex = window.currentSlices.indexOf(window.currentYearRange);
+  }
+  if (sliceIndex >= 0 && window.allSliceSortedCounts[sliceIndex]) {
+    window.currentSortedCountsForSlice = window.allSliceSortedCounts[sliceIndex];
+    console.log("Rebuilding slice ", sliceIndex, window.currentSortedCountsForSlice); rebuildSpiralWithNewOrder();
+  }
+}
+
+/**
+ * Rebuild the entire spiral visualization using the current
+ * engine-sorted community counts, without reloading data from disk.
+ */
+function rebuildSpiralWithNewOrder() {
+  var sorted = window.currentSortedCountsForSlice;
+  if (!sorted) return;
+
+  var svg    = d3.select("#chart");
+  var bounds = svg.node().getBoundingClientRect();
+  var width  = bounds.width;
+  var height = bounds.height;
+
+  // Convert engine format to the CSV-row format the code expects
+  var csvRows = sorted.map(function(r) {
+    return { community: String(r.community), count: String(r.count) };
+  });
+
+  // Recompute community centre positions from the new ordering
+  center_positions_spiral = string_to_numbers_graph_centers(csvRows);
+  center_positions_spiral = transform_graph_centers(center_positions_spiral, height, width);
+  center_positions_spiral.sort(function(a, b) { return d3.ascending(a.community, b.community); });
+
+  // Recompute optimal number of nodes for the updated community sizes
+  optimal_no_of_nodes = opt_no_of_nodes(csvRows);
+
+  // Get the base node data (before spiral positions) by stripping x,y from current data
+  // We use global_data_unchanged which has the full node attributes
+  var baseData = global_data_unchanged.map(function(d) {
+    var copy = Object.assign({}, d);
+    // These will be recomputed by computing_spiral_positions
+    delete copy.x;
+    delete copy.y;
+    return copy;
+  });
+
+  // Sort nodes within each community by centrality (same as showdata_spiral_community_chart)
+  var prepare_data = [];
+  var unique_comms = new Set(baseData.map(function(d) { return d.community; }));
+  unique_comms.forEach(function(entry) {
+    var commData = baseData.filter(function(d) { return d.community == entry; });
+    commData.sort(function(a, b) { return d3.descending(a.centrality, b.centrality); });
+    prepare_data.push.apply(prepare_data, commData);
+  });
+
+  // Recompute spiral positions with the new centres
+  prepare_data = computing_spiral_positions(center_positions_spiral, prepare_data, height, width);
+
+  global_data = prepare_data;
+  global_data_unchanged = prepare_data;
+  global_data_sorted = prepare_data.slice();
+  global_data_sorted.sort(function(a, b) { return d3.descending(a.node, b.node); });
+  global_data = global_data_sorted;
+
+  // Clear and redraw
+  d3.select("#chart").select("svg").remove();
+  var newSvg = d3.select("#chart");
+  var newBounds = newSvg.node().getBoundingClientRect();
+  initializeSpiralChart(newSvg, newBounds.height, newBounds.width);
+
+  updateGraphStats(global_data, node_to_node_link_data);
+  draw_spiral_community();
+
+  // Fit the newly ordered spiral to screen
+  if (window.SpinTrixMainZoom && window.SpinTrixMainZoom.fitAll) {
+    window.SpinTrixMainZoom.fitAll(400, 40);
+  }
+}
+
+/**
+ * Sync the α slider UI to reflect the auto-computed best α.
+ * Called by BarChartPopulator.js after Pareto analysis completes.
+ */
+function syncAlphaSliderUI() {
+  var slider   = document.getElementById('AlphaSlider');
+  var text     = document.getElementById('textInputAlpha');
+  var hint     = document.getElementById('alphaHint');
+  var label    = document.getElementById('paretoLabel');
+  var details  = document.getElementById('paretoDetailsText');
+  var rhoDisp  = document.getElementById('rhoFloorDisplay');
+
+  if (slider) slider.value = window.currentBestAlpha;
+  if (text)   text.value   = window.currentBestAlpha.toFixed(2);
+  if (hint)   hint.textContent =
+    'Optimal for this dataset: \u03b1 = ' + window.currentBestAlpha.toFixed(2);
+  if (label) {
+    label.textContent = 'Auto \u2605';
+    label.className   = 'badge bg-success';
+  }
+  if (rhoDisp) rhoDisp.textContent = window.currentRhoFloor.toFixed(2);
+
+  // Build mini sweep table in the info tooltip
+  if (details && window.currentParetoResults.length > 0) {
+    var html = '<table style="font-size:11px;width:100%">';
+    html += '<tr><th>\u03b1</th><th>\u03c4</th><th>\u03c1</th><th></th></tr>';
+    for (var i = 0; i < window.currentParetoResults.length; i++) {
+      var r = window.currentParetoResults[i];
+      var isBest    = Math.abs(r.alpha - window.currentBestAlpha) < 0.01;
+      var qualified = r.rho >= window.currentRhoFloor;
+      var style = isBest ? 'font-weight:bold;color:#4dac26' :
+                  !qualified ? 'color:#999' : '';
+      html += '<tr style="' + style + '">';
+      html += '<td>' + r.alpha.toFixed(2) + '</td>';
+      html += '<td>' + r.tau.toFixed(3)   + '</td>';
+      html += '<td>' + r.rho.toFixed(3)   + '</td>';
+      html += '<td>' + (isBest ? '\u2605' : !qualified ? '\u2715' : '') + '</td>';
+      html += '</tr>';
+    }
+    html += '</table>';
+    details.innerHTML = html;
+  }
+}
