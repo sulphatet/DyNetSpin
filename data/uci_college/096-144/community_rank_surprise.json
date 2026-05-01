@@ -1,0 +1,118 @@
+{
+  "18": {
+    "rank_surprise": 10.1094,
+    "is_anomalous": true
+  },
+  "19": {
+    "rank_surprise": 8.2746,
+    "is_anomalous": true
+  },
+  "26": {
+    "rank_surprise": 0.0,
+    "is_anomalous": false
+  },
+  "21": {
+    "rank_surprise": 4.4693,
+    "is_anomalous": false
+  },
+  "20": {
+    "rank_surprise": 6.2363,
+    "is_anomalous": false
+  },
+  "22": {
+    "rank_surprise": 7.0033,
+    "is_anomalous": false
+  },
+  "27": {
+    "rank_surprise": 0.0,
+    "is_anomalous": false
+  },
+  "24": {
+    "rank_surprise": 4.0033,
+    "is_anomalous": false
+  },
+  "25": {
+    "rank_surprise": 0.0,
+    "is_anomalous": false
+  },
+  "5": {
+    "rank_surprise": 2.6137,
+    "is_anomalous": false
+  },
+  "28": {
+    "rank_surprise": 0.0,
+    "is_anomalous": false
+  },
+  "23": {
+    "rank_surprise": 1.2976,
+    "is_anomalous": false
+  },
+  "14": {
+    "rank_surprise": 0.9441,
+    "is_anomalous": false
+  },
+  "6": {
+    "rank_surprise": 0.7758,
+    "is_anomalous": false
+  },
+  "15": {
+    "rank_surprise": 0.8906,
+    "is_anomalous": false
+  },
+  "11": {
+    "rank_surprise": 2.3776,
+    "is_anomalous": false
+  },
+  "10": {
+    "rank_surprise": 1.7845,
+    "is_anomalous": false
+  },
+  "17": {
+    "rank_surprise": 1.988,
+    "is_anomalous": false
+  },
+  "12": {
+    "rank_surprise": 3.8611,
+    "is_anomalous": false
+  },
+  "16": {
+    "rank_surprise": 2.1915,
+    "is_anomalous": false
+  },
+  "4": {
+    "rank_surprise": 2.8141,
+    "is_anomalous": false
+  },
+  "2": {
+    "rank_surprise": 1.9202,
+    "is_anomalous": false
+  },
+  "8": {
+    "rank_surprise": 4.2681,
+    "is_anomalous": false
+  },
+  "9": {
+    "rank_surprise": 4.115,
+    "is_anomalous": false
+  },
+  "1": {
+    "rank_surprise": 5.1324,
+    "is_anomalous": false
+  },
+  "7": {
+    "rank_surprise": 2.2593,
+    "is_anomalous": false
+  },
+  "0": {
+    "rank_surprise": 1.2298,
+    "is_anomalous": false
+  },
+  "13": {
+    "rank_surprise": 1.6663,
+    "is_anomalous": false
+  },
+  "3": {
+    "rank_surprise": 5.082,
+    "is_anomalous": false
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "18": {
+    "rank_surprise": 2.0255,
+    "is_anomalous": false
+  },
+  "20": {
+    "rank_surprise": 5.0255,
+    "is_anomalous": false
+  },
+  "28": {
+    "rank_surprise": 10.0255,
+    "is_anomalous": true
+  },
+  "24": {
+    "rank_surprise": 6.0255,
+    "is_anomalous": false
+  },
+  "21": {
+    "rank_surprise": 1.0255,
+    "is_anomalous": false
+  },
+  "4": {
+    "rank_surprise": 7.3362,
+    "is_anomalous": false
+  },
+  "15": {
+    "rank_surprise": 6.6715,
+    "is_anomalous": false
+  },
+  "7": {
+    "rank_surprise": 2.8829,
+    "is_anomalous": false
+  },
+  "25": {
+    "rank_surprise": 2.0255,
+    "is_anomalous": false
+  },
+  "14": {
+    "rank_surprise": 3.1621,
+    "is_anomalous": false
+  },
+  "22": {
+    "rank_surprise": 2.9745,
+    "is_anomalous": false
+  },
+  "26": {
+    "rank_surprise": 6.6019,
+    "is_anomalous": false
+  },
+  "29": {
+    "rank_surprise": 0.0,
+    "is_anomalous": false
+  },
+  "27": {
+    "rank_surprise": 4.2292,
+    "is_anomalous": false
+  },
+  "17": {
+    "rank_surprise": 1.2988,
+    "is_anomalous": false
+  },
+  "19": {
+    "rank_surprise": 9.7386,
+    "is_anomalous": true
+  },
+  "16": {
+    "rank_surprise": 0.9262,
+    "is_anomalous": false
+  },
+  "10": {
+    "rank_surprise": 1.0255,
+    "is_anomalous": false
+  },
+  "9": {
+    "rank_surprise": 1.5458,
+    "is_anomalous": false
+  },
+  "11": {
+    "rank_surprise": 0.6341,
+    "is_anomalous": false
+  },
+  "6": {
+    "rank_surprise": 0.8752,
+    "is_anomalous": false
+  },
+  "3": {
+    "rank_surprise": 6.9991,
+    "is_anomalous": false
+  },
+  "2": {
+    "rank_surprise": 1.5832,
+    "is_anomalous": false
+  },
+  "5": {
+    "rank_surprise": 4.1486,
+    "is_anomalous": false
+  },
+  "23": {
+    "rank_surprise": 1.2853,
+    "is_anomalous": false
+  },
+  "13": {
+    "rank_surprise": 6.4091,
+    "is_anomalous": false
+  },
+  "12": {
+    "rank_surprise": 1.4787,
+    "is_anomalous": false
+  },
+  "1": {
+    "rank_surprise": 1.2614,
+    "is_anomalous": false
+  },
+  "8": {
+    "rank_surprise": 0.9932,
+    "is_anomalous": false
+  },
+  "0": {
+    "rank_surprise": 5.4465,
+    "is_anomalous": false
+  }
+}
