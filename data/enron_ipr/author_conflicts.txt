@@ -1,3 +1,0 @@
-Duplicate name -> multiple node ids (kept the most frequent):
-
-Node id -> multiple names (kept the most frequent):
