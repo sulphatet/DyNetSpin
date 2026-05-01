@@ -1,0 +1,76 @@
+{
+  "data_vispub": {
+    "label": "VisPub",
+    "enabled": true,
+    "slices": [
+      { "label": "2000-2004", "dir": "2000-2004", "enabled": true },
+      { "label": "2005-2009", "dir": "2005-2009", "enabled": true },
+      { "label": "2010-2014", "dir": "2010-2014", "enabled": true },
+      { "label": "2015-2019", "dir": "2015-2019", "enabled": true }
+    ]
+  },
+"harry_potter": {
+    "label": "Harry Potter",
+    "enabled": true,
+    "slices": [
+        { "label": "Book_1", "dir": "Book_1", "enabled": true },
+        { "label": "Book_2", "dir": "Book_2", "enabled": true },
+        { "label": "Book_3", "dir": "Book_3", "enabled": true },
+        { "label": "Book_4", "dir": "Book_4", "enabled": true },
+        { "label": "Book_5", "dir": "Book_5", "enabled": true },
+        { "label": "Book_6", "dir": "Book_6", "enabled": true }
+    ]
+  },
+  "enron_ipr": {
+  "label": "enron_ipr",
+  "enabled": false,
+  "slices": [
+    { "label": "1998", "dir": "1998", "enabled": true },
+    { "label": "1999", "dir": "1999", "enabled": true },
+    { "label": "2000", "dir": "2000", "enabled": true },
+    { "label": "2001", "dir": "2001", "enabled": true },
+    { "label": "2002", "dir": "2002", "enabled": true }
+  ]
+},
+"enron_ipr_new": {
+  "label": "Enron Dataset",
+  "enabled": true,
+  "slices": [
+    { "label": "1999", "dir": "1999", "enabled": true },
+    { "label": "2000", "dir": "2000", "enabled": true },
+    { "label": "2001", "dir": "2001", "enabled": true },
+    { "label": "2002", "dir": "2002", "enabled": true }
+  ]
+},
+"uci_college": {
+  "label": "UCI College",
+  "enabled": true,
+  "slices": [
+    { "label": "0 - 47 Days", "dir": "000-047", "enabled": true },
+    { "label": "48 - 95 Days", "dir": "048-095", "enabled": true },
+    { "label": "96 - 144 Days", "dir": "096-144", "enabled": true },
+    { "label": "145 - 192 Days", "dir": "145-192", "enabled": true }
+  ]
+},
+"smallreddit": {
+  "label": "TinyReddit",
+  "enabled": true,
+  "slices": [
+    { "label": "2005-2007", "dir": "2005-2007", "enabled": true },
+    { "label": "2008-2010", "dir": "2008-2010", "enabled": true },
+    { "label": "2011-2013", "dir": "2011-2013", "enabled": true },
+    { "label": "2014-2016", "dir": "2014-2016", "enabled": true },
+    { "label": "2017-2019", "dir": "2017-2019", "enabled": true }
+  ]
+},
+"infovis data": {
+    "label": "InfoVis Dataset",
+    "enabled": true,
+    "slices": [
+      { "label": "2000-2004", "dir": "2000-2004", "enabled": true },
+      { "label": "2005-2009", "dir": "2005-2009", "enabled": true },
+      { "label": "2010-2014", "dir": "2010-2014", "enabled": true },
+      { "label": "2015-2019", "dir": "2015-2019", "enabled": true }
+    ]
+  }
+}

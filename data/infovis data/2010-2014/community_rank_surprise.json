@@ -1,0 +1,206 @@
+{
+  "50": {
+    "rank_surprise": 1.616,
+    "is_anomalous": false
+  },
+  "38": {
+    "rank_surprise": 6.0293,
+    "is_anomalous": false
+  },
+  "35": {
+    "rank_surprise": 23.9066,
+    "is_anomalous": false
+  },
+  "33": {
+    "rank_surprise": 23.9066,
+    "is_anomalous": false
+  },
+  "31": {
+    "rank_surprise": 0.384,
+    "is_anomalous": false
+  },
+  "49": {
+    "rank_surprise": 5.0293,
+    "is_anomalous": false
+  },
+  "24": {
+    "rank_surprise": 21.7784,
+    "is_anomalous": false
+  },
+  "42": {
+    "rank_surprise": 10.0293,
+    "is_anomalous": false
+  },
+  "20": {
+    "rank_surprise": 7.384,
+    "is_anomalous": false
+  },
+  "21": {
+    "rank_surprise": 18.4878,
+    "is_anomalous": false
+  },
+  "39": {
+    "rank_surprise": 7.616,
+    "is_anomalous": false
+  },
+  "46": {
+    "rank_surprise": 4.616,
+    "is_anomalous": false
+  },
+  "47": {
+    "rank_surprise": 2.616,
+    "is_anomalous": false
+  },
+  "28": {
+    "rank_surprise": 17.6746,
+    "is_anomalous": false
+  },
+  "10": {
+    "rank_surprise": 6.9707,
+    "is_anomalous": false
+  },
+  "1": {
+    "rank_surprise": 14.4878,
+    "is_anomalous": false
+  },
+  "48": {
+    "rank_surprise": 11.616,
+    "is_anomalous": false
+  },
+  "32": {
+    "rank_surprise": 13.616,
+    "is_anomalous": false
+  },
+  "26": {
+    "rank_surprise": 11.1972,
+    "is_anomalous": false
+  },
+  "16": {
+    "rank_surprise": 6.0293,
+    "is_anomalous": false
+  },
+  "19": {
+    "rank_surprise": 11.616,
+    "is_anomalous": false
+  },
+  "41": {
+    "rank_surprise": 20.9651,
+    "is_anomalous": false
+  },
+  "7": {
+    "rank_surprise": 5.7142,
+    "is_anomalous": false
+  },
+  "40": {
+    "rank_surprise": 20.9651,
+    "is_anomalous": false
+  },
+  "37": {
+    "rank_surprise": 3.9707,
+    "is_anomalous": false
+  },
+  "36": {
+    "rank_surprise": 1.6746,
+    "is_anomalous": false
+  },
+  "15": {
+    "rank_surprise": 4.1331,
+    "is_anomalous": false
+  },
+  "30": {
+    "rank_surprise": 18.3199,
+    "is_anomalous": false
+  },
+  "34": {
+    "rank_surprise": 19.9651,
+    "is_anomalous": false
+  },
+  "43": {
+    "rank_surprise": 22.6104,
+    "is_anomalous": false
+  },
+  "44": {
+    "rank_surprise": 25.6104,
+    "is_anomalous": false
+  },
+  "9": {
+    "rank_surprise": 6.9651,
+    "is_anomalous": false
+  },
+  "5": {
+    "rank_surprise": 2.2858,
+    "is_anomalous": false
+  },
+  "22": {
+    "rank_surprise": 4.9651,
+    "is_anomalous": false
+  },
+  "14": {
+    "rank_surprise": 2.6801,
+    "is_anomalous": false
+  },
+  "29": {
+    "rank_surprise": 3.6104,
+    "is_anomalous": false
+  },
+  "6": {
+    "rank_surprise": 9.3499,
+    "is_anomalous": false
+  },
+  "45": {
+    "rank_surprise": 9.5463,
+    "is_anomalous": false
+  },
+  "27": {
+    "rank_surprise": 5.5463,
+    "is_anomalous": false
+  },
+  "11": {
+    "rank_surprise": 17.1916,
+    "is_anomalous": false
+  },
+  "4": {
+    "rank_surprise": 3.8028,
+    "is_anomalous": false
+  },
+  "12": {
+    "rank_surprise": 5.0349,
+    "is_anomalous": false
+  },
+  "8": {
+    "rank_surprise": 2.5819,
+    "is_anomalous": false
+  },
+  "17": {
+    "rank_surprise": 13.9366,
+    "is_anomalous": false
+  },
+  "0": {
+    "rank_surprise": 17.1616,
+    "is_anomalous": false
+  },
+  "3": {
+    "rank_surprise": 13.5178,
+    "is_anomalous": false
+  },
+  "13": {
+    "rank_surprise": 2.5478,
+    "is_anomalous": false
+  },
+  "18": {
+    "rank_surprise": 1.2572,
+    "is_anomalous": false
+  },
+  "2": {
+    "rank_surprise": 6.2572,
+    "is_anomalous": false
+  },
+  "23": {
+    "rank_surprise": 0.388,
+    "is_anomalous": false
+  },
+  "25": {
+    "rank_surprise": 27.8043,
+    "is_anomalous": true
+  }
+}
