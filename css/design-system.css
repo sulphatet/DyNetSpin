@@ -1,0 +1,1500 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   DyNetSpin — Design System
+   Apple-inspired: clarity, deference, depth. Light content canvas + refined
+   dark chrome (pro-tool look), soft layered elevation, restrained colour.
+   Loaded LAST so it wins over Bootstrap and css/style.css.
+   Categorical state colours mirror js/theme.js (window.STATE_COLORS).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Layout */
+  --nav-height: 52px;
+  --sidebar-width: 244px;
+  --dock-width: 384px;
+
+  /* Neutral ramp */
+  --gray-0:  #ffffff;
+  --gray-50: #f5f5f7;   /* app canvas (Apple system gray 6) */
+  --gray-100:#ececee;
+  --gray-200:#e3e3e6;
+  --gray-300:#d2d2d7;   /* hairline borders */
+  --gray-400:#b0b0b8;
+  --gray-500:#86868b;   /* secondary text */
+  --gray-700:#4b4b50;
+  --gray-900:#1d1d1f;   /* primary text / chrome */
+
+  /* Chrome (navbar + sidebar) */
+  --chrome-bg:   #1d1d1f;
+  --chrome-bg-2: #2a2a2d;
+  --chrome-border: rgba(255,255,255,0.08);
+  --chrome-text: rgba(255,255,255,0.92);
+  --chrome-text-dim: rgba(255,255,255,0.55);
+
+  /* Accent */
+  --accent:      #0071e3;   /* Apple blue */
+  --accent-hover:#0077ed;
+  --accent-soft: rgba(0,113,227,0.12);
+
+  /* Categorical temporal-state colours (keep in sync with js/theme.js) */
+  --state-incoming: #0072B2;
+  --state-outgoing: #E69F00;
+  --state-both:     #CC79A7;
+  --state-stable:   #8C8C8C;
+
+  /* Content surfaces */
+  --bg-app:     var(--gray-50);
+  --panel-bg:   var(--gray-0);
+  --panel-border: rgba(0,0,0,0.08);
+  --text:       var(--gray-900);
+  --text-dim:   var(--gray-500);
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius:    12px;
+  --radius-lg: 16px;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow:    0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.05);
+  --shadow-lg: 0 4px 12px rgba(0,0,0,0.10), 0 16px 40px rgba(0,0,0,0.08);
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0.0, 0.2, 1);
+  --dur:  0.22s;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  padding: 0;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: var(--text);
+  background: var(--bg-app);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow: hidden;                 /* no page scroll — panels scroll internally */
+}
+.scale-page { height: 100%; }
+
+/* ─── NAVBAR ──────────────────────────────────────────────────────────────── */
+.navbar.fixed-top {
+  height: var(--nav-height);
+  min-height: var(--nav-height);
+  padding: 0 var(--space-4);
+  background: var(--chrome-bg) !important;
+  border-bottom: 1px solid var(--chrome-border);
+  backdrop-filter: saturate(140%) blur(12px);
+  box-shadow: none;
+}
+.navbar-brand {
+  font-size: 1.02rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--chrome-text) !important;
+}
+.navbar .btn-dark,
+.navbar-toggler {
+  border: none;
+  color: var(--chrome-text-dim);
+  background: transparent;
+}
+.navbar .btn-dark:hover { color: var(--chrome-text); background: rgba(255,255,255,0.06); }
+.navbar-toggler { padding: 4px 8px; }
+.navbar-toggler:focus { box-shadow: none; }
+
+/* (Year/timeline controls moved out of the navbar into the .time-strip.) */
+
+/* ─── SIDEBAR (dark chrome) ───────────────────────────────────────────────── */
+#sidebar { --bs-offcanvas-width: var(--sidebar-width); }
+.sidebar-nav,
+#sidebar.offcanvas {
+  width: var(--sidebar-width);
+  background: var(--chrome-bg) !important;
+  border-right: 1px solid var(--chrome-border);
+}
+.sidebar-nav .offcanvas-body { padding: var(--space-3) 0; }
+#sidebar .text-muted { color: var(--chrome-text-dim) !important; }
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  color: var(--chrome-text) !important;
+  font-size: 0.86rem;
+  font-weight: 500;
+  padding: 8px var(--space-4) !important;
+  border-radius: 0;
+  transition: background var(--dur) var(--ease);
+}
+.sidebar-link:hover { background: rgba(255,255,255,0.06); }
+/* The open section. This was `color: #fff !important`, which was right while the
+   sidebar was dark chrome and became white-on-white the moment the light
+   surface below redefined --chrome-bg to rgba(252,252,253,0.86): every other
+   rule in this block reads the token and re-themed itself, this one literal did
+   not, so opening a section made its own label vanish. Emphasis is carried by
+   weight instead, which survives both palettes. */
+.sidebar-link[aria-expanded="true"] {
+  color: var(--chrome-text) !important;
+  font-weight: 650;
+}
+.sidebar-link .right-icon { display: inline-flex; transition: transform var(--dur) var(--ease); }
+.sidebar-link[aria-expanded="true"] .right-icon { transform: rotate(180deg); }
+#sidebar hr { border-color: var(--chrome-border); opacity: 1; }
+
+/* sidebar controls */
+#sidebar .navbar-nav .ps-3 { padding-left: var(--space-4) !important; padding-right: var(--space-3); }
+#sidebar .navbar-nav .ps-3 > li { position: relative; margin-bottom: 2px; padding: 4px var(--space-4); }
+#sidebar .form-label { font-size: 0.78rem; color: var(--chrome-text-dim); }
+#sidebar label.text-white, #sidebar .text-white { color: var(--chrome-text) !important; font-size: 0.82rem; }
+#sidebar input.bg-dark,
+#find-node-options input {
+  background: var(--chrome-bg-2) !important;
+  border: 1px solid var(--chrome-border);
+  border-radius: var(--radius-sm);
+  color: #fff !important;
+  padding: 5px 10px;
+  width: calc(100% - 8px);
+}
+#find-node-options { padding: var(--space-2) var(--space-4); }
+#find-node-options button,
+#sidebar .btn-outline-secondary,
+#dataset-buttons button {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--chrome-border);
+  background: var(--chrome-bg-2);
+  color: var(--chrome-text);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 5px 10px;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+#find-node-options button:hover,
+#sidebar .btn-outline-secondary:hover,
+#dataset-buttons button:hover { background: #37373b; border-color: rgba(255,255,255,0.18); color:#fff; }
+#dataset-buttons button.active,
+#sidebar .btn-outline-secondary.active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+#dataset-buttons { display:flex; flex-wrap:wrap; gap:6px; padding: var(--space-2) 0; }
+
+/* range sliders */
+#sidebar .form-range { padding: 0; }
+#sidebar .form-range::-webkit-slider-thumb { background: var(--accent); }
+#sidebar .form-range::-moz-range-thumb { background: var(--accent); border: none; }
+#sidebar .badge.bg-success { background: var(--accent) !important; font-weight: 600; }
+
+/* ─── APP MAIN + STAGE: full-bleed spiral, panels float around the edges ──── */
+main {
+  position: fixed;
+  top: var(--nav-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-app);
+  overflow: hidden;
+  transition: left var(--dur) var(--ease);
+}
+
+@media (min-width: 992px) {
+  main { left: var(--sidebar-width); }
+  body.sidebar-collapsed main { left: 0; }
+  /* Force the Bootstrap offcanvas to stay docked & visible on desktop
+     (Bootstrap keeps .offcanvas translated off-screen until .show). */
+  #sidebar.offcanvas,
+  .sidebar-nav {
+    top: var(--nav-height);
+    height: calc(100% - var(--nav-height));
+    transform: none;
+    visibility: visible;
+  }
+  body.sidebar-collapsed #sidebar.offcanvas,
+  body.sidebar-collapsed .sidebar-nav { transform: translateX(-100%); visibility: hidden; }
+  /* No dimming backdrop for the docked desktop sidebar. */
+  .offcanvas-backdrop { display: none; }
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+#chart {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  background: var(--gray-0);
+  cursor: grab;
+}
+#legend1[hidden] { display: none !important; }
+
+/* ─── FLOATING PANELS ─────────────────────────────────────────────────────── */
+.floaty {
+  position: absolute;
+  z-index: 15;
+  width: 320px;
+  max-width: calc(100% - 2 * var(--space-4));
+  display: flex;
+  flex-direction: column;
+  background: rgba(255,255,255,0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+.floaty__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px var(--space-3);
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.floaty__title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.floaty__title i { color: var(--text-dim); font-size: 0.85rem; }
+.floaty__spacer { flex: 1; }
+.floaty__chevron { color: var(--text-dim); font-size: 0.8rem; transition: transform var(--dur) var(--ease); }
+.floaty.collapsed .floaty__chevron { transform: rotate(180deg); }
+.floaty.collapsed .floaty__header { border-bottom: none; }
+.floaty__body { padding: var(--space-3); overflow: auto; scrollbar-width: thin; }
+.floaty.collapsed .floaty__body { display: none; }
+.floaty__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px var(--space-3);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-top: var(--space-2);
+}
+.floaty__meta b { color: var(--text); font-weight: 600; }
+
+/* Left column: Status + Cohort stacked, flowing so they never overlap.
+   The column is click-through where empty; its cards capture pointer events. */
+.floaty-col--left {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  bottom: 68px;                 /* clear the bottom time-strip */
+  width: 340px;
+  max-width: calc(100% - 2 * var(--space-3));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  z-index: 15;
+  pointer-events: none;
+  overflow: hidden;
+}
+.floaty-col--left .floaty {
+  position: relative;
+  width: 100%;
+  pointer-events: auto;
+  min-height: 0;
+}
+.floaty--status { flex: 0 0 auto; }
+.floaty--status .floaty__body { overflow: visible; }
+.floaty--cohort { flex: 1 1 auto; }  /* takes remaining height, scrolls inside */
+/* When collapsed (no cohort snapshotted) shrink to just the header instead of
+   stretching to fill the column with dead white space. */
+.floaty--cohort.collapsed { flex: 0 0 auto; }
+.floaty--inspector { top: var(--space-3); right: var(--space-3); max-height: calc(100% - 2 * var(--space-3)); }
+
+/* Inspector sub-sections */
+.inspector-section { padding-bottom: var(--space-3); margin-bottom: var(--space-3); border-bottom: 1px solid rgba(0,0,0,0.06); }
+.inspector-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.inspector-section__title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Time-strip (bottom-left, swipeable across time) */
+.time-strip {
+  position: absolute;
+  left: var(--space-3);
+  bottom: var(--space-3);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: calc(100% - 2 * var(--space-3));
+  padding: 6px 10px;
+  background: rgba(255,255,255,0.72);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 999px;
+  box-shadow: var(--shadow-lg);
+}
+.time-strip__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+/* (#year-buttons is now the vertical .ts-viewport; its buttons are styled by
+   the .ts-btn rules in the minimalist-chrome override block below.) */
+
+/* Zoom HUD (injected by SpinTrixMainZoom) → bottom-right, clear of Inspector */
+#mainZoomUI {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-3);
+  display: flex;
+  gap: 6px;
+  z-index: 16;
+}
+
+/* Mobile: panels stop floating and stack under the spiral. */
+@media (max-width: 991.98px) {
+  main { overflow-y: auto; }
+  .stage { height: auto; min-height: 100%; display: flex; flex-direction: column; overflow: visible; }
+  #chart { position: relative; inset: auto; height: 60vh; min-height: 320px; }
+  .floaty-col--left {
+    position: static;
+    width: auto;
+    max-width: none;
+    bottom: auto;
+    overflow: visible;
+    pointer-events: auto;
+  }
+  .floaty, .time-strip {
+    position: static;
+    width: auto;
+    max-width: none;
+    max-height: none;
+    margin: var(--space-3);
+    border-radius: var(--radius-lg);
+  }
+  .floaty--cohort { max-height: none; }
+  #year-buttons { max-width: 100%; }
+  #mainZoomUI { position: absolute; }
+}
+.zoom-btn {
+  min-width: 34px;
+  height: 34px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  font-size: 17px;
+  line-height: 32px;
+  text-align: center;
+  color: var(--text);
+  box-shadow: var(--shadow-sm);
+  transition: background var(--dur) var(--ease), transform 0.08s var(--ease);
+}
+.zoom-btn:hover { background: #fff; }
+.zoom-btn:active { transform: translateY(1px); }
+.non-scaling-stroke { vector-effect: non-scaling-stroke; }
+
+/* Hover labels for cross-community neighbours. A white halo via paint-order
+   keeps them readable over dense spirals without a background box, which would
+   occlude the very nodes being named. Font size and stroke width are set inline
+   from the zoom factor, so only colour and weight live here. */
+.hover-label {
+  fill: var(--gray-900, #1d1d1f);
+  stroke: #ffffff;
+  paint-order: stroke fill;
+  font-family: "Inter", -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
+}
+.hover-label--ego { font-weight: 700; }
+
+/* ── Network edges ─────────────────────────────────────────────────────────
+   Both classes are <path> (spiral-order arcs), so `fill: none` is mandatory —
+   without it every edge renders as a filled blob between its endpoints. The
+   inline styles set by applyEdgeStyle() carry stroke/width/opacity; these rules
+   are the safety net and the shared geometry defaults. */
+.spiral_edges,
+.adjacent_edges {
+  fill: none;
+  stroke-linecap: round;
+  pointer-events: none;   /* edges must never steal hover from the nodes */
+}
+
+/* ─── LEGEND (unified: categorical swatches OR continuous ramp) ───────────── */
+.legend {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin: 0;
+  margin-left: auto;
+  font-size: 0.76rem;
+}
+.legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+.color-box {
+  width: 13px;
+  height: 13px;
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+.legend-continuous {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-dim);
+}
+.legend-continuous .legend-name { font-weight: 600; color: var(--text); }
+.legend-ramp {
+  display: inline-block;
+  width: 120px;
+  height: 10px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08);
+}
+.legend-min, .legend-max { font-variant-numeric: tabular-nums; }
+
+/* ─── INSPECTOR PANEL SPECIFICS ───────────────────────────────────────────── */
+.scrollbox {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  font-size: 0.8rem;
+}
+/* Neighbour list: wrap long strings instead of clipping them. */
+.neighbour-list { overflow-wrap: anywhere; word-break: break-word; }
+#nodeTimesliceChart { width: 100%; }
+#communitySideContainer { width: 100%; }
+#communitySideContainer svg { max-width: 100%; height: auto; }
+
+/* Micro-topology matrix: scales to fit its section, no scrollbars/clipping. */
+.matrix-body { display: flex; gap: var(--space-3); align-items: flex-start; }
+#communityMatrix {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+}
+#communityMatrix svg { max-width: 100%; height: auto; display: block; }
+#communityMatrixLegend {
+  flex: 0 0 auto;
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+#communityMatrixLegend b { color: var(--text); }
+
+/* ─── INFO TOOLTIPS (unified) ─────────────────────────────────────────────── */
+.info-tooltip, .info-tooltip-bottom { position: relative; display: inline-flex; vertical-align: middle; }
+.info-tooltip { margin-left: 5px; }
+.info-tooltip-bottom { position: absolute; left: 10px; bottom: 8px; z-index: 10; }
+.info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  background: var(--gray-100);
+  color: var(--accent);
+  border: 1px solid var(--gray-300);
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 11px;
+  font-style: normal;
+  cursor: help;
+  font-family: "Inter", sans-serif;
+}
+.info-text {
+  display: none;
+  position: absolute;
+  bottom: 130%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--gray-900);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  font-size: 0.74rem;
+  line-height: 1.45;
+  font-weight: 400;
+  min-width: 220px;
+  max-width: 300px;
+  box-shadow: var(--shadow-lg);
+  white-space: normal;
+  z-index: 1000;
+  pointer-events: none;
+}
+.info-text b { color: #fff; }
+.info-tooltip:hover .info-text,
+.info-tooltip-bottom:hover .info-text { display: block; }
+.info-tooltip-bottom .info-text { bottom: 26px; left: 0; transform: none; }
+/* keep right-edge tooltips on-screen (inspector floats on the right edge) */
+.floaty--inspector .info-tooltip .info-text { left: auto; right: 0; transform: none; }
+.floaty--cohort .info-tooltip .info-text { left: 0; right: auto; transform: none; }
+#sidebar .info-tooltip .info-text { left: auto; right: 0; transform: none; min-width: 190px; }
+
+/* d3 hover tooltip */
+/* Node hover tooltip. `fixed`, not `absolute`: the chart lives inside a
+   scrollable column, so page coordinates drifted from the cursor as soon as
+   that column was scrolled. positionTooltip feeds it viewport coordinates and
+   flips it away from the right and bottom edges, which on a spiral is where
+   most of the outer turn sits. */
+div.tooltip {
+  position: fixed;
+  z-index: 4000;
+  text-align: left;
+  padding: 8px 11px;
+  font: 12px "Inter", sans-serif;
+  line-height: 1.4;
+  background: var(--gray-900);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg, var(--shadow));
+  pointer-events: none;
+  max-width: 260px;
+}
+/* The name leads because it is what the reader is checking; everything else
+   is a label/value pair at one size down, so the block scans in one look
+   rather than reading as four equal sentences. */
+div.tooltip .tt-name {
+  font-weight: 600;
+  font-size: 12.5px;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+div.tooltip .tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 11.5px;
+}
+div.tooltip .tt-row span { color: rgba(255,255,255,0.62); }
+div.tooltip .tt-sub {
+  font-size: 10.5px;
+  color: rgba(255,255,255,0.62);
+  margin: 1px 0 4px;
+}
+/* The swatch is the dot's own fill, so the chip answers "what does this
+   colour mean" without a trip to the legend. */
+div.tooltip .tt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+  padding: 2px 7px 2px 4px;
+  margin-bottom: 6px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+}
+div.tooltip .tt-chip i {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.35);
+}
+
+/* generic toggle-active used by some controls */
+button.active { background-color: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* scrollbar polish (WebKit) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gray-400); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MINIMALIST CHROME OVERRIDE  (loaded last → wins)
+   - no dark navbar; light, unobtrusive collapsible sidebar
+   - vertical unfurlable timeline rail; always-visible encoding bar
+   Relight the sidebar by redefining the --chrome-* tokens to light values so
+   every rule that referenced them flips automatically.
+   ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --chrome-bg:       rgba(252,252,253,0.86);
+  --chrome-bg-2:     #f1f1f4;
+  --chrome-border:   rgba(0,0,0,0.08);
+  --chrome-text:     var(--gray-900);
+  --chrome-text-dim: var(--gray-500);
+}
+
+/* No navbar → the app fills the viewport top-to-bottom. */
+main { top: 0; }
+
+/* Mac-style floating control sidebar: a rounded frosted card that sizes to its
+   open sections (does NOT stretch to the bottom), with margins all around and
+   an internal scroll only if the open sections exceed the viewport. */
+@media (min-width: 992px) {
+  #sidebar.offcanvas, .sidebar-nav {
+    top: 52px;
+    left: var(--space-3);
+    bottom: auto;                              /* override Bootstrap's bottom:0 stretch */
+    width: calc(var(--sidebar-width) - 24px);
+    height: auto;                              /* size to content / open panels */
+    max-height: calc(100vh - 64px);            /* scroll only past this */
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow-y: auto;
+    overflow-x: hidden;
+    transition: transform var(--dur) var(--ease), opacity var(--dur) var(--ease);
+  }
+  /* Collapse: slide the card off-screen and let the stage go full-bleed. */
+  body.sidebar-collapsed #sidebar.offcanvas,
+  body.sidebar-collapsed .sidebar-nav {
+    transform: translateX(calc(-100% - var(--space-4)));
+    opacity: 0;
+    visibility: hidden;
+  }
+  body.sidebar-collapsed main { left: 0; }
+}
+
+/* Light frosted sidebar surface */
+.sidebar-nav, #sidebar.offcanvas {
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+}
+.sidebar-nav .offcanvas-body { padding: var(--space-2) 0; }
+.sidebar-link:hover { background: rgba(0,0,0,0.05); }
+#sidebar input.bg-dark, #find-node-options input { color: var(--text) !important; }
+#find-node-options button:hover,
+#sidebar .btn-outline-secondary:hover,
+#dataset-buttons button:hover { background: var(--gray-100); border-color: var(--gray-400); color: var(--text); }
+
+/* Floating controls toggle + brand (replaces the navbar) */
+.chrome-toggle {
+  position: fixed; top: 10px; left: 10px; z-index: 40;
+  width: 34px; height: 34px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+  color: var(--text); cursor: pointer; box-shadow: var(--shadow-sm);
+  transition: background var(--dur) var(--ease);
+}
+.chrome-toggle:hover { background: #fff; }
+.chrome-brand {
+  position: fixed; top: 15px; left: 54px; z-index: 40;
+  font-weight: 700; font-size: 0.95rem; letter-spacing: -0.01em;
+  color: var(--text); pointer-events: none;
+}
+
+/* ── Vertical timeline rail (left edge, vertically centred) ──────────────── */
+.time-strip--v {
+  left: var(--space-2);
+  bottom: auto; top: 50%; transform: translateY(-50%);
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  border-radius: var(--radius-lg);
+  max-height: 78vh;
+}
+.ts-viewport {
+  display: flex; flex-direction: column; gap: 6px;
+  overflow-y: auto; overflow-x: visible;
+  max-height: 64vh;
+  scrollbar-width: none;                 /* arrows drive scrolling */
+  max-width: none;
+}
+.ts-viewport::-webkit-scrollbar { display: none; }
+.ts-arrow {
+  border: none; background: transparent; color: var(--text-dim);
+  width: 40px; height: 20px; cursor: pointer; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; font-size: 0.85rem;
+}
+.ts-arrow:hover { background: rgba(0,0,0,0.05); color: var(--text); }
+.ts-item { position: relative; display: flex; align-items: center; }
+.ts-btn {
+  width: 44px; height: 44px; flex: 0 0 auto;
+  border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text);
+  font-weight: 600; font-size: 0.6rem; line-height: 1.1;
+  cursor: pointer; padding: 2px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  overflow: hidden; white-space: normal; word-break: break-word;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+.ts-btn:hover { background: rgba(0,0,0,0.05); }
+.ts-btn.active {
+  background: var(--accent); color: #fff; border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Slices the hovered node is not present in. A wash rather than a colour: this
+   is a transient annotation on top of whatever the rail already encodes, and it
+   must not be mistaken for one of the rail's own states. The active slice keeps
+   its full-strength treatment either way — "you are here" outranks "they were
+   not here", and dimming the selected week would read as having lost the
+   selection. Transitioned so a fast sweep across the chart does not strobe. */
+.ts-btn--nodeabsent { opacity: 0.3; }
+.ts-btn--nodeabsent.active { opacity: 0.72; }
+.ts-btn { transition: background var(--dur) var(--ease),
+                      border-color var(--dur) var(--ease),
+                      opacity var(--dur) var(--ease); }
+.ts-chevron {
+  position: absolute; right: -12px; top: 50%; transform: translateY(-50%);
+  width: 14px; height: 40px; border: none; background: transparent;
+  color: var(--text-dim); cursor: pointer; font-size: 0.7rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.ts-chevron:hover { color: var(--accent); }
+.ts-item.unfurled .ts-chevron { color: var(--accent); }
+
+/* Child sub-slices unfurl to the right of the rail */
+.ts-unfurl {
+  position: absolute; left: 100%; margin-left: 12px;
+  display: flex; flex-direction: column; gap: 6px;
+  padding: 6px;
+  background: rgba(255,255,255,0.82);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid rgba(0,0,0,0.06); border-radius: var(--radius);
+  box-shadow: var(--shadow-lg); z-index: 17;
+  max-height: 64vh; overflow-y: auto;
+}
+.ts-unfurl .ts-btn { width: 52px; }
+
+/* Granularity model: fine slices grouped into coarse hue-bands ─────────────── */
+.ts-group { display: flex; flex-direction: row; align-items: stretch; gap: 5px; }
+.ts-band {
+  width: 16px; flex: 0 0 auto; border: none; border-radius: 6px;
+  background: var(--hue, var(--accent)); color: #fff; cursor: pointer;
+  writing-mode: vertical-rl; text-orientation: mixed;
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.03em; padding: 4px 0;
+  display: flex; align-items: center; justify-content: center; opacity: 0.88;
+  transition: opacity var(--dur) var(--ease);
+}
+.ts-band:hover { opacity: 1; }
+.ts-band::after { content: " \25B8"; }   /* ▸ hint: click to roll up */
+.ts-group-col { display: flex; flex-direction: column; gap: 6px; }
+.ts-btn--banded { border-left: 3px solid var(--hue, var(--gray-300)); }
+.ts-btn--banded.active { border-left-color: #fff; }
+.ts-back {
+  width: 44px; height: 26px; flex: 0 0 auto; margin-bottom: 2px;
+  border: 1px solid var(--gray-300); border-radius: var(--radius-sm);
+  background: transparent; color: var(--text); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.ts-back:hover { background: rgba(0,0,0,0.05); }
+
+/* Left column: Global Spiral + Cohort Tracker stacked ABOVE the timeline rail.
+   Content-width (so collapsed panels "smush" left), full available height so the
+   timeline can take the remaining space and scroll. */
+.floaty-col--left {
+  left: 12px; top: 12px; bottom: 12px;
+  width: auto; overflow: visible;
+}
+.floaty-col--left .floaty { width: 320px; }
+.floaty-col--left .floaty.collapsed { width: max-content; }   /* smush to header */
+/* Timeline rail sits in the column flow, aligned to the BOTTOM, with no card
+   chrome (it's just the buttons — no white widget box). */
+.floaty-col--left .time-strip--v {
+  position: static; left: auto; top: auto; bottom: auto; transform: none;
+  background: transparent; border: none; box-shadow: none; padding: 0;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+  margin-top: auto;                     /* push the year buttons to the bottom */
+  flex: 0 0 auto; min-height: 0; max-height: none; align-self: flex-start;
+  pointer-events: auto;                 /* column is click-through; re-enable here */
+}
+/* The rail holds 4–5 slices. 52vh let it reserve half the screen it never used,
+   and the Cohort Tracker — which actually needed ~1250px for three cards — was
+   left with ~510px. The rail now takes what it needs and yields the rest. */
+.floaty-col--left .ts-viewport {
+  max-height: 30vh; overflow-y: auto; flex: 0 1 auto; min-height: 0;
+}
+body.cohorts-active .floaty-col--left .ts-viewport { max-height: 20vh; }
+/* The Cohort Tracker stays in the left column flow whether or not cohorts are
+   active. It previously jumped to a hardcoded left:88px/top:232px the moment it
+   activated, which teleported it out of the layout and over the canvas. It now
+   simply expands in place, under Global Spiral and above the timeline rail. */
+body.cohorts-active .floaty--cohort {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Cohort cards STACK vertically in a fixed-width column and scroll when they
+   overflow — the panel stays a tidy strip instead of widening across the stage. */
+body.cohorts-active .floaty-col--left .floaty--cohort { width: min(34vw, 360px); }
+#communitySideContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+#communitySideContainer > div {
+  flex: 0 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin-bottom: 0 !important;  /* gap owns the spacing now */
+}
+body.sidebar-collapsed .floaty-col--left { top: 52px; }
+
+/* ── Always-visible encoding bar (bottom-centre) ────────────────────────── */
+.encoding-bar {
+  /* nudged left of dead-centre so its right end (the Overview button) clears the
+     bottom-right zoom controls / inspector overhang */
+  position: absolute; left: 46%; transform: translateX(-50%);
+  bottom: var(--space-3); z-index: 16;
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.78);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  backdrop-filter: saturate(180%) blur(16px);
+  border: 1px solid rgba(0,0,0,0.06); border-radius: 999px;
+  box-shadow: var(--shadow-lg); max-width: calc(100% - 120px);
+}
+.enc-group { display: flex; align-items: center; gap: 8px; }
+.enc-label {
+  font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.04em; color: var(--text-dim);
+}
+.enc-divider { width: 1px; height: 22px; background: rgba(0,0,0,0.1); }
+.seg { display: inline-flex; background: var(--gray-100); border-radius: 999px; padding: 2px; }
+.seg-btn {
+  border: none; background: transparent; color: var(--text-dim);
+  font-size: 0.74rem; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+  cursor: pointer; white-space: nowrap; transition: all var(--dur) var(--ease);
+}
+.seg-btn:hover { color: var(--text); }
+.seg-btn.active { background: #fff; color: var(--accent); box-shadow: var(--shadow-sm); }
+/* When SELECTED, a colour button is tinted with its encoding's own palette:
+   Local Volatility = the 4 categorical state hues; the continuous encodings =
+   the d3.interpolateRdYlBu ramp. */
+.seg-btn--cat.active {
+  background: linear-gradient(90deg,
+    #0072B2 0 25%, #E69F00 25% 50%, #CC79A7 50% 75%, #8C8C8C 75% 100%);
+  color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+}
+.seg-btn--ramp.active {
+  background: linear-gradient(90deg, #a50026, #f46d43, #fee090, #74add1, #313695);
+  color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.55);
+}
+.enc-alpha { width: 110px; accent-color: var(--accent); }
+.enc-alpha-val {
+  width: 40px; text-align: center; font-size: 0.76rem; color: var(--text);
+  border: 1px solid var(--gray-300); border-radius: var(--radius-sm); background: #fff; padding: 2px;
+}
+#paretoLabel.badge { background: var(--accent); color: #fff; font-weight: 600; font-size: 0.66rem; }
+.enc-hint, .enc-warn { display: none; }   /* keep in DOM for JS; not shown in the bar */
+
+/* Ensure no floating panel exceeds the viewport height (reviewer fix). */
+.floaty { max-height: calc(100vh - 2 * var(--space-3)); }
+.floaty--inspector { max-height: calc(100vh - 2 * var(--space-3)); }
+
+@media (max-width: 991.98px) {
+  .time-strip--v { position: static; transform: none; flex-direction: row; max-height: none; }
+  .ts-viewport { flex-direction: row; max-height: none; overflow-x: auto; }
+  .ts-unfurl { position: static; left: auto; margin-left: 0; flex-direction: row; }
+  .floaty-col--left { left: auto; bottom: auto; }
+  .encoding-bar { position: static; transform: none; margin: var(--space-3); max-width: none; flex-wrap: wrap; }
+  .chrome-brand { display: none; }
+}
+
+/* Tooltip portal (replaces the clipped inline .info-text popovers) ─────────── */
+.info-text { display: none !important; }   /* content read by the JS portal */
+.tooltip-portal {
+  position: fixed; z-index: 4000; pointer-events: none;
+  background: var(--gray-900); color: #fff;
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  font-size: 0.74rem; line-height: 1.45; max-width: 300px;
+  box-shadow: var(--shadow-lg);
+}
+.tooltip-portal b { color: #fff; }
+
+/* ── Temporal event strip: guidance minis on the time rail ──────────────────
+   Each slice chip carries a stacked mini-bar of the four temporal-state
+   shares (Incoming / Outgoing / Transient / Stable, coloured via --state-*)
+   so volatile slices are visible before any slice is opened. The interior
+   slice with the highest churn share gets a dot marker (.ts-btn--hot);
+   boundary slices are excluded because their states are forced. */
+.ts-btn { position: relative; }
+.ts-mini {
+  display: flex;
+  height: 4px;
+  margin-top: 3px;
+  border-radius: 2px;
+  overflow: hidden;
+  opacity: 0.9;
+}
+.ts-mini i { display: block; flex-basis: 0; }
+.ts-hot-dot {
+  position: absolute;
+  top: 3px; right: 3px;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--state-outgoing, #E69F00);
+  box-shadow: 0 0 0 1.5px #fff;
+  cursor: help;
+}
+
+/* ── Community labels on the spiral ─────────────────────────────────────────
+   Rendered inside the zoomed <g>, so they scale with the layout. A white
+   halo (paint-order) keeps them legible over dense arcs; pointer-events are
+   off so node hover underneath is never blocked. */
+.community-label {
+  /* Layout space is ~1200x700 px and community radii are tens of px,
+     so the label must stay small in layout units. */
+  font: 700 12px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  fill: #1d1d1f;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  paint-order: stroke fill;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+/* ── Presence-partition compare mode (Euler view on the main stage) ───────── */
+.ts-btn--compare {
+  outline: 2px solid var(--state-incoming, #0072B2);
+  outline-offset: 1px;
+}
+.compare-banner {
+  position: absolute;
+  top: var(--space-3, 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--gray-200, #e5e5ea);
+  border-radius: 10px;
+  box-shadow: var(--shadow-md, 0 4px 14px rgba(0,0,0,0.08));
+  font-size: 0.8rem;
+}
+.compare-banner .cb-leg { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.compare-banner .cb-leg i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.compare-banner .cb-exit {
+  border: none; background: transparent; cursor: pointer;
+  font-size: 0.9rem; line-height: 1; padding: 2px 6px; border-radius: 6px;
+}
+.compare-banner .cb-exit:hover { background: rgba(0,0,0,0.06); }
+/* Region boundaries read as regions, not as dotted rings: a soft tint with a
+   light solid edge. Fills are additive, so overlaps darken on their own and
+   the intersections are legible without any extra ink. */
+.pp-circle {
+  fill: rgba(120, 130, 160, 0.055);
+  stroke: #b6b6bd;
+  stroke-width: 1.2px;
+}
+.pp-slice-label { font: 700 15px/1 -apple-system, "Segoe UI", Roboto, sans-serif; fill: #1d1d1f; }
+.pp-badge {
+  font: 600 12px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  fill: #6e6e73;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  paint-order: stroke fill;
+}
+.pp-node { stroke: rgba(255,255,255,0.7); stroke-width: 0.4px; }
+
+/* ── Compare mode v2: community sub-clusters, disabled encodings, rail help ──
+   Note: there is deliberately NO resting ring around a community. All boundary
+   chrome is hover-only (see the lineage block below). */
+.pp-group-label {
+  font: 600 9.5px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  fill: #86868b;
+  stroke: #ffffff;          /* halo, so a label over a dense glyph stays legible */
+  stroke-width: 2.5px;
+  paint-order: stroke fill;
+}
+.encoding-bar--compare-disabled .enc-group,
+.encoding-bar--compare-disabled .enc-divider {
+  opacity: 0.4;
+  pointer-events: none;
+}
+.ts-help {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+/* ── Compare mode: lineage hover ───────────────────────────────────────────
+   Hit testing is done with a quadtree against one delegated mousemove, so no
+   element here needs to be interactive. Marking them all inert keeps the text
+   from catching a selection cursor. */
+.pp-layer-labels text,
+.pp-layer-rings text,
+.pp-node { pointer-events: none; }
+
+/* Dimming is context-preserving rather than obliterating — at 0.15 the
+   surrounding structure vanished and the highlight lost its frame. */
+.pp-node--dim   { opacity: 0.35; }
+.pp-node--own   { stroke: #1d1d1f; stroke-width: 1.2px; }
+.pp-node--focus { stroke: #1d1d1f; stroke-width: 2.2px; }
+.pp-node--kin {
+  stroke: #1d1d1f;
+  stroke-width: 1.7px;
+  stroke-dasharray: 2.4 1.6;
+}
+
+/* The only rings in the view. They appear on hover and describe a community
+   lineage: one ring means the community held together across the selection,
+   several mean it broke and the trace shows the order. */
+.pp-lineage-ring {
+  fill: none;
+  stroke: #8e8e93;
+  stroke-width: 1.1px;
+  stroke-dasharray: 4 3.5;
+  opacity: 0.85;
+}
+.pp-lineage-ring--own    { stroke: #1d1d1f; stroke-width: 1.5px; opacity: 1; }
+.pp-lineage-ring--broken { stroke: #1d1d1f; stroke-width: 1.4px; }
+.pp-lineage-trace {
+  fill: none;
+  stroke: #1d1d1f;
+  stroke-width: 1.1px;
+  stroke-dasharray: 3 3;
+  opacity: 0.6;
+}
+.pp-ring-label {
+  font: 600 10px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  fill: #1d1d1f;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  paint-order: stroke fill;
+}
+
+/* Resting links between fragments of one community family: where a community
+   split in two, or two merged into one. Faint by design. */
+.pp-lineage-link {
+  fill: none;
+  opacity: 0.34;
+  stroke-linecap: round;
+}
+
+/* ── Ego Spiral (Inspector) ───────────────────────────────────────────────
+   Radius encodes time, angle encodes community. Deliberately low-contrast
+   scaffolding so the alter trails carry the signal. */
+#egoSpiral { width: 100%; }
+.ego-svg { width: 100%; height: auto; display: block; overflow: visible; }
+.ego-empty {
+  font-size: 0.72rem;
+  color: var(--gray-500, #86868b);
+  padding: 10px 2px;
+  line-height: 1.4;
+}
+.ego-ring {
+  fill: none;
+  stroke: var(--gray-200, #e5e5ea);
+  stroke-width: 1px;
+}
+.ego-ring-label {
+  font: 500 7.5px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  fill: #a1a1a6;
+  stroke: #ffffff;
+  stroke-width: 2.5px;
+  paint-order: stroke fill;
+}
+/* The slice the chart is showing. This is the only mark in the view that means
+   anything about WHICH slice — the bands hold all of them — so it says "you are
+   here" and nothing more. EgoSpiral.refresh() moves it without re-rendering. */
+.ego-ring--active { stroke: #86868b; stroke-width: 1.6px; }
+.ego-ring-label--active { fill: #1d1d1f; font-weight: 700; }
+/* Rings skipped by the label stride when they are too close together to read.
+   Still in the DOM, so becoming the active ring is enough to name one — which
+   is why refresh() can move the emphasis without knowing this rule exists. */
+.ego-ring-label--thin { display: none; }
+.ego-ring-label--thin.ego-ring-label--active { display: block; }
+/* One band per destination crowd, fixed across every slice. Fill colour and
+   opacity are set inline from the data (which crowd, and whether it is the
+   ego's own), so this rule only owns the shared behaviour. */
+/* fill-opacity is driven from JS (markWedge) so the band and its legend entry
+   light up together; a CSS :hover rule here would be dead under the inline
+   style anyway. */
+.ego-wedge { stroke: none; transition: fill-opacity 0.12s ease; }
+
+/* One cell per (neighbour, week) spent in that band's crowd. Deliberately
+   stronger than the band it sits in — the band is a container, the cells are
+   the reading. No stroke at any size: at un_voting's 14 rings a cell is about
+   4.9 x 5.4px, and a 1px outline would eat the fill it delimits. */
+.ego-cell { stroke: none; fill-opacity: 0.42; }
+
+/* Radial guides. Same weight as the time rings on purpose: together they read
+   as one polar grid, i.e. as scaffold. NO data-bearing lines exist in this
+   view — a line between two dots would read as "these two are connected". */
+.ego-guide {
+  stroke: var(--gray-200, #e5e5ea);
+  stroke-width: 0.7px;
+}
+.ego-guide--on {
+  stroke: #1d1d1f;
+  stroke-width: 1px;
+  opacity: 0.5;
+}
+.ego-dot { stroke: #ffffff; stroke-width: 0.6px; }
+.ego-dot--dim { opacity: 0.18; }
+/* Departure marker at last + 1. Deliberately quieter than a dot: it marks an
+   absence, and should not compete with the data it terminates. */
+.ego-x line {
+  stroke: var(--gray-500, #8e8e93);
+  stroke-width: 1.1px;
+  stroke-linecap: round;
+}
+.ego-centre { fill: #1d1d1f; stroke: #ffffff; stroke-width: 1.5px; }
+.ego-caption {
+  margin-top: 4px;
+  font-size: 0.66rem;
+  line-height: 1.35;
+  color: var(--gray-500, #86868b);
+  min-height: 1.8em;
+}
+.ego-caption b { color: #1d1d1f; font-weight: 600; }
+
+/* Patchwork legend. Without it the wedge tints are just decoration. */
+.ego-legend { margin-top: 5px; }
+.ego-legend__head {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: var(--gray-500, #86868b);
+  margin-bottom: 3px;
+}
+.ego-legend__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 9px;
+  font-size: 0.63rem;
+  color: #1d1d1f;
+}
+.ego-legend__item {
+  display: inline-flex; align-items: center; gap: 4px;
+  cursor: default;
+  transition: color 0.12s ease;
+}
+/* Set when the matching wedge is hovered, and vice versa. */
+.ego-legend__item--on { font-weight: 700; color: #000; }
+.ego-legend__swatch {
+  width: 9px; height: 9px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+
+.ego-readout { margin-top: 6px; }
+.ego-title {
+  font-size: 0.74rem;
+  font-weight: 650;
+  color: #1d1d1f;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ego-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.66rem;
+  font-variant-numeric: tabular-nums;
+}
+.ego-table th {
+  font-weight: 600;
+  color: #a1a1a6;
+  text-align: right;
+  padding: 1px 3px;
+  border-bottom: 1px solid var(--gray-200, #e5e5ea);
+}
+.ego-table th:first-child, .ego-table td:first-child { text-align: left; }
+.ego-table td {
+  text-align: right;
+  padding: 1px 3px;
+  color: #48484a;
+}
+.ego-note {
+  margin-top: 4px;
+  font-size: 0.62rem;
+  color: #a1a1a6;
+}
+
+/* ─── Community Evolution overview ───────────────────────────────────────────
+   A toggle-able, all-slices radial overview that takes the main-chart space.
+   z-index 8 sits it ABOVE #chart (0) but below the floating panels (15) and the
+   encoding bar (16), so the Inspector, Cohort Tracker, timeline and the toggle
+   itself stay usable while it is open. */
+.evolution-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(251, 251, 253, 0.975);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.evolution-overlay[hidden] { display: none; }
+.evo-svg {
+  width: min(86vmin, 900px);
+  max-height: 84vh;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+.evo-empty { color: #86868b; font-size: 0.8rem; padding: 40px; }
+
+/* Faint concentric time rings — scaffold, so they read as a grid not data. */
+.evo-ring { fill: none; stroke: var(--gray-200, #e5e5ea); stroke-width: 1px; }
+.evo-ring--active { stroke: #b0b0b5; stroke-width: 1.4px; }
+
+/* Edge-of-data rings: the innermost and outermost slices have only one side of
+   the ±1 window, so the ring itself is drawn dashed. The state is a property of
+   the slice, not of the nodes on it, so nothing is added to the dots. */
+.evo-ring--censored { stroke-dasharray: 4 4; }
+.evo-ring-btn--censored .evo-ring-btn__bg {
+  stroke-dasharray: 3 3;
+}
+
+/* Legend note shown when the displayed slice sits at the edge of the data. */
+.legend-item--note { opacity: 0.75; }
+.legend-censor-mark {
+  display: inline-block; width: 14px; height: 0;
+  border-top: 2px dashed var(--gray-400, #8e8e93);
+  margin-right: 6px; vertical-align: middle;
+}
+.legend-censor-text { font-style: italic; }
+
+/* Each community is a spiral of member dots; the faint disc behind it groups
+   them and is the hover/click target. */
+.evo-disc {
+  fill: #8e8e93;
+  fill-opacity: 0.06;
+  stroke: none;
+  transition: fill-opacity 0.12s ease;
+}
+/* Dots ignore the pointer so the whole SVG receives mousemove — hover picks the
+   nearest community, so it works anywhere near a spiral, not only dead-on it. */
+.evo-svg { cursor: crosshair; }
+.evo-dot { stroke: none; pointer-events: none; }
+/* Hover lights the SAME individuals across every ring; everyone else recedes.
+   Dimming is done with ONE class on the dot layer (so 30k dots don't each get
+   toggled) and only the hovered community's members get `--lit`. */
+.evo-dots--focus .evo-dot { opacity: 0.10; }
+.evo-dots--focus .evo-dot.evo-dot--lit { opacity: 1; stroke: #1d1d1f; stroke-width: 0.4px; }
+
+/* Node-state legend swatches. */
+.evo-legend {
+  position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 14px; font-size: 0.68rem; color: #48484a;
+}
+.evo-legend__item { display: inline-flex; align-items: center; gap: 5px; }
+.evo-legend__swatch { width: 9px; height: 9px; border-radius: 999px; flex: 0 0 auto; }
+
+/* Ring year labels are real BUTTONS (pill background + text) that open that
+   slice's normal spiral — so it's obvious they're clickable. */
+.evo-ring-btn__bg {
+  fill: #ffffff;
+  stroke: #c7c9cc; stroke-width: 1px;
+  filter: drop-shadow(0 1px 1.5px rgba(0,0,0,0.10));
+}
+.evo-ring-label {
+  font: 650 11px/1 -apple-system, "Segoe UI", Roboto, sans-serif;
+  fill: #1d1d1f;
+}
+.evo-ring-btn:hover .evo-ring-btn__bg { fill: #0071e3; stroke: #0071e3; }
+.evo-ring-btn:hover .evo-ring-label { fill: #ffffff; }
+.evo-ring-btn--active .evo-ring-btn__bg { fill: #1d1d1f; stroke: #1d1d1f; }
+.evo-ring-btn--active .evo-ring-label { fill: #ffffff; }
+
+.evo-bar { position: absolute; top: 16px; right: 20px; display: flex; gap: 8px; }
+.evo-gran {
+  border: 1px solid var(--gray-200, #e5e5ea);
+  background: #ffffff;
+  color: #1d1d1f;
+  font-size: 0.72rem;
+  padding: 5px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0,0,0,0.06));
+}
+.evo-gran:hover { border-color: #0071e3; color: #0071e3; }
+.evo-gran--close { color: #86868b; }
+.evo-caption {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 74ch;
+  text-align: center;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: #6e6e73;
+}
+.evo-caption b { color: #1d1d1f; font-weight: 600; }
+/* The bottom caption is obscured by the encoding bar; in overview mode its role
+   moves to the Inspector panel on the right. */
+body.evo-active .evo-caption { display: none; }
+
+/* ── Overview-mode Inspector panel ───────────────────────────────────────────
+   Show the overview widgets and hide the (irrelevant) ego/node sections while
+   the overview is open; hide the overview panel otherwise. */
+#overviewInspectorSection { display: none; }
+body.evo-active #overviewInspectorSection { display: block; }
+body.evo-active .floaty--inspector .inspector-section:not(#overviewInspectorSection) { display: none; }
+
+.evo-ins__guide {
+  font-size: 0.7rem; line-height: 1.45; color: #6e6e73; margin-bottom: 8px;
+}
+.evo-ins__legend {
+  display: flex; flex-wrap: wrap; gap: 4px 12px;
+  font-size: 0.66rem; color: #1d1d1f; margin-bottom: 10px;
+}
+.evo-ins__h {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; color: #86868b; margin: 10px 0 5px;
+}
+/* activity-by-slice bars (each row is a button that opens that slice) */
+.evo-act { display: flex; flex-direction: column; gap: 3px; }
+.evo-act__row {
+  display: grid; grid-template-columns: 3.6em 1fr 2.4em; align-items: center; gap: 6px;
+  width: 100%; border: none; background: transparent; cursor: pointer;
+  padding: 2px 4px; border-radius: 6px; text-align: left;
+}
+.evo-act__row:hover { background: rgba(0,113,227,0.08); }
+.evo-act__row--active { background: rgba(0,113,227,0.12); }
+.evo-act__lab { font-size: 0.68rem; color: #1d1d1f; font-weight: 600; }
+.evo-act__barwrap { height: 8px; background: var(--gray-100, #f2f2f5); border-radius: 999px; overflow: hidden; }
+.evo-act__bar { display: block; height: 100%; background: #0071e3; border-radius: 999px; }
+.evo-act__val { font-size: 0.66rem; color: #6e6e73; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* live focus readout (filled by community hover) */
+.evo-hoverdetail { font-size: 0.7rem; color: #48484a; min-height: 3em; }
+.evo-hoverdetail__hint { color: #a1a1a6; }
+.evo-hd__title { font-weight: 700; color: #1d1d1f; font-size: 0.74rem; }
+.evo-hd__sub { color: #6e6e73; margin-bottom: 4px; }
+.evo-hd__cap { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.04em; color: #a1a1a6; margin-bottom: 2px; }
+.evo-hd__row { display: grid; grid-template-columns: 1fr auto auto; gap: 8px; align-items: baseline; padding: 1px 0; }
+.evo-hd__row b { color: #1d1d1f; font-variant-numeric: tabular-nums; }
+.evo-hd__g { color: #86868b; font-size: 0.64rem; }
+.evo-hd__foot { margin-top: 6px; font-size: 0.64rem; color: #a1a1a6; line-height: 1.35; }
+
+/* ── Dataset picker: a collapsible two-level taxonomy ────────────────────
+   The picker is a taxonomy, not a menu. Two things decide how a reader should
+   treat a dataset, and they are independent: whether the partition came with
+   the data or was detected on it, and what the name drawn on a community
+   means. Those are the two levels.
+
+   Sections collapse because the list is long and a reader usually wants one
+   half of it. A collapsed header still names its category and carries a count,
+   so a shut section is an answer rather than a hidden drawer. */
+.ds-group + .ds-group { margin-top: 6px; }
+
+.ds-group__head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 7px 2px;
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--gray-200, #e5e5e7);
+  text-align: left;
+  cursor: pointer;
+  color: var(--gray-700, #4a4a4f);
+}
+.ds-group__head:hover { color: var(--gray-900, #1d1d1f); }
+.ds-group__head:focus-visible {
+  outline: 2px solid var(--blue, #0071e3);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+.ds-group__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+/* The chevron is the only moving part; the body itself shows and hides
+   outright, because animating a wrapping button grid to an unknown height is
+   the kind of thing that works until a label is one word longer. */
+.ds-group__chev {
+  flex: 0 0 auto;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--gray-500, #86868b);
+  transition: transform var(--dur, .18s) var(--ease, ease);
+}
+.ds-group--open .ds-group__chev { transform: rotate(90deg); }
+.ds-group__count {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--gray-500, #86868b);
+}
+
+.ds-group__body { display: none; padding: 8px 0 4px 16px; }
+.ds-group--open > .ds-group__body { display: block; }
+
+/* One phrase, once, for the whole section. */
+.ds-group__basis {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--gray-500, #86868b);
+  margin: 0 0 9px;
+}
+
+.ds-sub + .ds-sub { margin-top: 9px; }
+.ds-sub__head {
+  font-size: 10.5px;
+  font-style: italic;
+  color: var(--gray-500, #86868b);
+  margin-bottom: 4px;
+}
+.ds-sub__btns { display: flex; flex-wrap: wrap; gap: 4px; }
+/* The buttons carried mx-1 while they lived in one row; the flex gap owns the
+   spacing now, so the margin would double it unevenly at a wrap. */
+.ds-btn { margin: 0; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-group__chev { transition: none; }
+}
+
+/* ── Hover on the spiral ─────────────────────────────────────────────────
+   A community label is drawn at its glyph's centre, which is exactly where
+   the dots are. While a node in that community is hovered the label is the
+   one thing in the way, so it steps aside — and only that one, because the
+   others are still the reader's map of where they are. Opacity rather than
+   display, so nothing reflows and the label fades back on mouseout. */
+text.community-label { transition: opacity var(--dur, .18s) var(--ease, ease); }
+text.community-label--muted { opacity: 0; }
+
+/* Nodes are interactive and should say so. The radius grows on hover in JS;
+   this is the part that has to survive a repaint. */
+circle.happy { cursor: pointer; }
+
+@media (prefers-reduced-motion: reduce) {
+  text.community-label { transition: none; }
+}

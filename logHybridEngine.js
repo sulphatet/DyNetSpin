@@ -38,7 +38,8 @@ function logHybridSort(sliceData, alpha, timeGap) {
 
   // ── T1: Sort ascending by count (smallest = centre, largest = periphery)
   var dfT1 = sliceData[0].counts.slice().sort(function(a, b) {
-    return a.count - b.count;
+    if (a.count !== b.count) return a.count - b.count;
+    return a.community - b.community;   // deterministic tie-break (see below)
   });
 
   var totalComms = dfT1.length;
@@ -111,7 +112,15 @@ function logHybridSort(sliceData, alpha, timeGap) {
       df[ci2]._sortScore = alpha * sizePart + (1 - alpha) * histPart;
     }
 
-    df.sort(function(a, b) { return a._sortScore - b._sortScore; });
+    // Ties broken by community id so the ordering is fully determined by the
+    // data, not by the sort implementation. (Without this, equal-size
+    // communities — common at α=1 — order differently under a stable sort
+    // (JS) than under an unstable one (pandas quicksort), and the two
+    // implementations disagree on τ.)
+    df.sort(function(a, b) {
+      if (a._sortScore !== b._sortScore) return a._sortScore - b._sortScore;
+      return a.community - b.community;
+    });
 
     // Clean sort score and store
     var dfClean = [];
@@ -227,13 +236,91 @@ function _spearmanRho(x, y) {
 // ─────────────────────────────────────────────────────────────────
 
 /**
+ * Build the cross-slice community identity matching ONCE for a dataset.
+ *
+ * Why: per-slice Louvain (build_dataset.py: louvain_contiguous) assigns
+ * community ids contiguously in per-slice discovery order and never matches
+ * them across slices, so id k at slice t and id k at slice t+1 are unrelated
+ * groups. Measured on this repo's data, the chance that a community's true
+ * member-overlap successor carries the same id is at or near 1/k on every
+ * Louvain dataset. Pairing communities by id therefore measures noise.
+ * Datasets built in 'groundtruth' mode do get a global 0..K-1 remap, so
+ * there ids ARE identities and this matching reduces to the identity map.
+ *
+ * The matching depends only on slice MEMBERSHIPS, never on the ordering, so
+ * it is invariant across the whole α sweep and is computed a single time.
+ *
+ * @param {Array} sliceData - Same format as logHybridSort() input.
+ * @param {number} [minJaccard=0.10] - Below this, two communities are not "the same".
+ * @returns {Array} per-transition [[commA, commB], ...] matched pairs.
+ */
+function buildIdentityMatching(sliceData, minJaccard) {
+  if (minJaccard === undefined) minJaccard = 0.10;
+  var matchings = [];
+  if (!sliceData || sliceData.length < 2) return matchings;
+
+  function membersOf(nodeMap) {
+    var g = {};
+    var keys = Object.keys(nodeMap);
+    for (var i = 0; i < keys.length; i++) {
+      var c = nodeMap[keys[i]];
+      if (!g[c]) g[c] = {};
+      g[c][keys[i]] = 1;
+    }
+    return g;
+  }
+
+  for (var t = 0; t < sliceData.length - 1; t++) {
+    var A = membersOf(sliceData[t].nodeMap);
+    var B = membersOf(sliceData[t + 1].nodeMap);
+    var aKeys = Object.keys(A), bKeys = Object.keys(B);
+
+    // Candidate pairs with Jaccard >= threshold.
+    var cands = [];
+    for (var i2 = 0; i2 < aKeys.length; i2++) {
+      var ma = A[aKeys[i2]];
+      var maKeys = Object.keys(ma);
+      for (var j2 = 0; j2 < bKeys.length; j2++) {
+        var mb = B[bKeys[j2]];
+        var inter = 0;
+        for (var k2 = 0; k2 < maKeys.length; k2++) {
+          if (mb[maKeys[k2]] !== undefined) inter++;
+        }
+        if (!inter) continue;
+        var uni = maKeys.length + Object.keys(mb).length - inter;
+        var jac = inter / uni;
+        if (jac >= minJaccard) cands.push([jac, aKeys[i2], bKeys[j2]]);
+      }
+    }
+
+    // Greedy one-to-one on descending Jaccard (Greene et al. style):
+    // one-to-one stops a split being double-counted as two survivals.
+    cands.sort(function (p, q) { return q[0] - p[0]; });
+    var usedA = {}, usedB = {}, pairs = [];
+    for (var c2 = 0; c2 < cands.length; c2++) {
+      var ca = cands[c2][1], cb = cands[c2][2];
+      if (usedA[ca] || usedB[cb]) continue;
+      usedA[ca] = 1; usedB[cb] = 1;
+      pairs.push([ca, cb]);
+    }
+    matchings.push(pairs);
+  }
+  return matchings;
+}
+
+
+/**
  * Compute Kendall's τ (temporal stability) and Spearman's ρ (radial monotonicity)
  * from a series of sorted community counts.
  *
  * @param {Array} sortedCountsSeries - Output of logHybridSort().
+ * @param {Array} [matchings] - Output of buildIdentityMatching(). When supplied,
+ *   τ is computed over member-matched communities (correct for Louvain
+ *   datasets). When omitted, communities are paired by id — kept for
+ *   backward compatibility and exact only for globally-stable ids.
  * @returns {{tau: number, rho: number}}
  */
-function computeMetrics(sortedCountsSeries) {
+function computeMetrics(sortedCountsSeries, matchings) {
   // Build rankings: community → rank index
   var rankings = [];
   for (var t = 0; t < sortedCountsSeries.length; t++) {
@@ -245,23 +332,35 @@ function computeMetrics(sortedCountsSeries) {
     rankings.push(rankMap);
   }
 
-  // 1. Temporal Stability: Kendall's τ between consecutive slices
+  // 1. Temporal Stability: Kendall's τ between consecutive slices.
+  //    Communities are paired by member-overlap identity when a matching is
+  //    supplied, else by raw id (exact only for globally-stable ids).
   var tauScores = [];
   for (var t2 = 1; t2 < rankings.length; t2++) {
     var prev = rankings[t2 - 1];
     var curr = rankings[t2];
-    // Find common communities
-    var common = [];
-    var prevKeys = Object.keys(prev);
-    for (var pk = 0; pk < prevKeys.length; pk++) {
-      if (curr[prevKeys[pk]] !== undefined) common.push(prevKeys[pk]);
-    }
-    if (common.length > 2) {
-      var vecPrev = [], vecCurr = [];
-      for (var ci = 0; ci < common.length; ci++) {
-        vecPrev.push(prev[common[ci]]);
-        vecCurr.push(curr[common[ci]]);
+    var vecPrev = [], vecCurr = [];
+
+    if (matchings && matchings[t2 - 1]) {
+      var pairs = matchings[t2 - 1];
+      for (var mi = 0; mi < pairs.length; mi++) {
+        var pa = prev[pairs[mi][0]], pb = curr[pairs[mi][1]];
+        if (pa !== undefined && pb !== undefined) {
+          vecPrev.push(pa);
+          vecCurr.push(pb);
+        }
       }
+    } else {
+      var prevKeys = Object.keys(prev);
+      for (var pk = 0; pk < prevKeys.length; pk++) {
+        if (curr[prevKeys[pk]] !== undefined) {
+          vecPrev.push(prev[prevKeys[pk]]);
+          vecCurr.push(curr[prevKeys[pk]]);
+        }
+      }
+    }
+
+    if (vecPrev.length > 2) {
       var tau = _kendallTau(vecPrev, vecCurr);
       if (!isNaN(tau)) tauScores.push(tau);
     }
@@ -325,11 +424,15 @@ function findBestAlpha(sliceData, step) {
   var t0 = performance.now();
   var results = [];
 
+  // Community identity is a property of the memberships, not of the ordering,
+  // so the matching is built once and reused for every α in the sweep.
+  var matchings = buildIdentityMatching(sliceData);
+
   // Step 1: Sweep
   for (var a = 0; a <= 1.001; a += step) {
     var alpha = Math.round(a * 100) / 100; // avoid floating-point drift
     var sorted = logHybridSort(sliceData, alpha);
-    var metrics = computeMetrics(sorted);
+    var metrics = computeMetrics(sorted, matchings);
     results.push({
       alpha: alpha,
       tau: metrics.tau,
@@ -418,11 +521,15 @@ function buildSliceData(datasetKey, datasetsConfig, allYearsNodeData, allYearsCo
   var ds = datasetsConfig[datasetKey];
   if (!ds) return [];
 
-  var slices = (ds.slices || []).filter(function(s) { return s.enabled !== false; });
+  // Iterate the ACTIVE granularity level (window.currentSlices), not the coarse
+  // config, so the α sweep matches whatever level the timeline is showing.
+  var labels = (window.currentSlices && window.currentSlices.length)
+    ? window.currentSlices
+    : (ds.slices || []).filter(function(s){ return s.enabled !== false; }).map(function(s){ return s.label; });
   var sliceData = [];
 
-  for (var i = 0; i < slices.length; i++) {
-    var label = slices[i].label;
+  for (var i = 0; i < labels.length; i++) {
+    var label = labels[i];
     var nodeData = allYearsNodeData[label];
     var countData = allYearsCountData[label];
 

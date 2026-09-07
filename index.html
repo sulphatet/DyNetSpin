@@ -3,173 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=0.8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="css/bootstrap.min.css" />
     <link
       rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css"
+      href="./css/bootstrap-icons.css"
     />
     <link rel="stylesheet" href="css/dataTables.bootstrap5.min.css" />
     <link rel="stylesheet" href="css/style.css" />
-    <style>
-      /* ... [KEEP EXISTING CSS UNCHANGED] ... */
-      main > .container-fluid{
-        padding-left: .15rem;
-        padding-right: .15rem;
-      }
-      .info-tooltip-bottom .info-text::-webkit-scrollbar,
-      .info-tooltip .info-text::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .info-tooltip-bottom .info-text::-webkit-scrollbar-track,
-      .info-tooltip .info-text::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 3px;
-      }
-
-      .info-tooltip-bottom .info-text::-webkit-scrollbar-thumb,
-      .info-tooltip .info-text::-webkit-scrollbar-thumb {
-        background: #ccc;
-        border-radius: 3px;
-      }
-
-      .non-scaling-stroke { vector-effect: non-scaling-stroke; }
-      #mainZoomUI { position: absolute; right: 12px; top: 12px; display: flex; gap: 6px; z-index: 20; }
-      .zoom-btn { min-width: 34px; height: 34px; border: 1px solid #999; border-radius: 8px; background: #fff; cursor: pointer; font-size: 18px; line-height: 32px; text-align: center; padding: 0 10px; }
-      .zoom-btn:active { transform: translateY(1px); }
-      .mini-card{ --scale: .8; font-size: calc(1em * var(--scale)); }
-      .mini-card .card-body{ padding: calc(.5rem * var(--scale)); }
-      .mini-card .scrollbox{ max-height: calc(230px * var(--scale)); }
-      .mini-card #nodeTimesliceChart{ height: calc(200px * var(--scale)); }
-      #communitySideContainer svg{ transform: scale(var(--scale)); transform-origin: top left; }
-      body { padding-top: 70px; margin: 0; }
-      
-      .scrollbox { min-height: 200px; max-height: 230px; overflow-y: auto; }
-      .container-fluid { padding: 0.5rem; }
-      .row.g-1 > [class*="col-"] { padding-left: 0.25rem; padding-right: 0.25rem; }
-      .card { margin: 0; }
-      .card-body { padding: 0.5rem; }
-      
-      #community_textbox.scrollbox {
-        height: 230px;
-        min-height: 230px;
-      }
-
-      .info-tooltip-bottom { position: absolute; left: 12px; bottom: 8px; z-index: 10; }
-      .info-tooltip-bottom .info-icon { display: inline-block; background: #e9ecef; color: #007bff; border-radius: 50%; border: 1px solid #aaa; width: 18px; height: 18px; line-height: 18px; text-align: center; font-weight: bold; font-family: Arial, sans-serif; cursor: pointer; font-size: 13px; vertical-align: middle; }
-      .info-tooltip-bottom .info-text { display: none; position: absolute; bottom: 26px; left: 0; background: #fff; color: #222; border: 1px solid #ccc; border-radius: 6px; padding: 10px 14px; font-size: 12px; min-width: 240px; max-width: 300px; box-shadow: 0 2px 8px rgba(0,0,0,0.13); white-space: normal; z-index: 100; pointer-events: none; }
-      .info-tooltip-bottom:hover .info-text { display: block; }
-      
-      .info-tooltip { position: relative; display: inline-block; vertical-align: middle; margin-left: 5px; }
-      .info-tooltip .info-icon { display: inline-block; background: #f0f0f0; color: #007bff; border-radius: 50%; border: 1px solid #aaa; width: 16px; height: 16px; line-height: 16px; text-align: center; font-weight: bold; cursor: pointer; font-size: 12px; }
-      .info-tooltip .info-text { display: none; position: absolute; bottom: 125%; left: 50%; transform: translateX(-50%); background: #fff; color: #222; border: 1px solid #ccc; border-radius: 6px; padding: 10px 14px; font-size: 12px; min-width: 250px; max-width: 320px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); white-space: normal; z-index: 1000; pointer-events: none; }
-      .info-tooltip .info-text::after { content: ""; position: absolute; top: 100%; left: 50%; margin-left: -5px; border-width: 5px; border-style: solid; border-color: #ccc transparent transparent transparent; }
-      .info-tooltip:hover .info-text { display: block; }
-      
-      .col-md-4:last-child .info-tooltip .info-text,
-      #main-visualization-row > .col-md-4 .info-tooltip .info-text {
-        left: auto; right: 0; transform: translateX(0);
-      }
-      .col-md-4:last-child .info-tooltip .info-text::after,
-      #main-visualization-row > .col-md-4 .info-tooltip .info-text::after {
-        left: auto; right: 8px;
-      }
-      
-      #sidebar .navbar-nav .ps-3 > li {
-        position: relative; 
-      }
-      #sidebar .info-tooltip {
-        position: static; 
-      }
-      #sidebar .info-tooltip .info-text {
-        width: 190px;
-        min-width: 190px;
-        bottom: 100%; 
-        left: 50%; 
-        transform: translateX(-50%); 
-        margin-bottom: 8px;
-      }
-      #sidebar .info-tooltip .info-text::after {
-        left: auto;
-        right: 8px; 
-      }
-
-      #nodeTimesliceChart, #communityMatrix { width: 100%; height: 100%; }
-      #nodeTimesliceChart { height: 200px; }
-      #chart { width: 100%; height: 100%; } 
-      .legend { display: flex; flex-direction: row; gap: 15px; flex-wrap: wrap; font-family: Arial, sans-serif; margin-bottom: 0.5rem; }
-      .legend-item { display: flex; align-items: center; }
-      .color-box { width: 20px; height: 20px; border-radius: 4px; margin-right: 10px; }
-      #connection_tooltip, #ranking_tooltip, #color_tooltip { text-align: right; font-size: 0.9rem; }
-      .child { display: inline-block; padding: 0.5rem; }
-      div.tooltip { position: absolute; text-align: center; width: 150px; height: 28px; padding: 2px; font: 14px sans-serif; border: 0px; border-radius: 8px; pointer-events: none; }
-      button.active { background-color: #007bff; color: #fff; border-color: #007bff; }
-      .sidebar-nav{ width:var(--bs-offcanvas-width) !important; flex:0 0 var(--bs-offcanvas-width) !important; }
-      .row.g-1 { margin-top: -2.5rem; }
-      #sidebar{ --bs-offcanvas-width:220px; }
-      
-      /* NAVBAR + YEAR CONTROLS */
-      main {
-        padding-top: 0.5rem;
-        margin-left: 220px;
-        transition: margin-left 0.3s ease-in-out;
-      }
-      .sidebar-nav {
-        transition: margin-left 0.3s ease-in-out;
-      }
-      body.sidebar-collapsed .sidebar-nav {
-        margin-left: -220px;
-      }
-      body.sidebar-collapsed main {
-        margin-left: 0;
-      }
-      #year-controls { gap: 0.35rem; }
-      #year-controls .navbar-text { font-weight: 700; letter-spacing: 0.04em; color: #ffc107; font-size: 0.9rem; text-transform: uppercase; }
-      #year-buttons button { border-radius: 999px; padding: 0.25rem 0.8rem; font-weight: 600; font-size: 0.85rem; border-width: 2px; border-color: #ffc107; background-color: transparent; color: #ffc107; margin-left: 0.15rem; white-space: nowrap; }
-      #year-buttons button:hover { background-color: #ffc107; color: #212529; }
-      #year-buttons button.active { background-color: #ffc107; color: #212529; box-shadow: 0 0 0 0.15rem rgba(255, 193, 7, 0.4); transform: translateY(-1px); }
-      #main-chart-column { flex-grow: 10; min-width: 0; }
-      #side-chart-column { flex-grow: 1; }
-    </style>
+    <link rel="stylesheet" href="css/design-system.css" />
     <title>DyNetSpin</title>
   </head>
   <body>
     <div class="scale-page">
-      <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top py-1">
-        <div class="container-fluid align-items-center">
-          <div class="d-flex align-items-center flex-grow-1">
-            <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="offcanvasExample">
-              <span class="navbar-toggler-icon" data-bs-target="#sidebar"></span>
-            </button>
-            <button class="btn btn-dark d-none d-lg-block me-2 py-0" id="sidebar-toggle-btn" type="button" title="Toggle sidebar">
-              <i class="bi bi-chevron-bar-left"></i>
-            </button>
-            <a class="navbar-brand mb-0 h6" href="#">
-              <strong>DyNetSpin</strong>
-            </a>
-          </div>
-          <div id="year-controls" class="d-flex align-items-center ms-auto flex-nowrap">
-            <span class="navbar-text me-2">Select year:</span>
-            <div id="year-buttons" class="btn-group"></div>
-          </div>
-        </div>
-      </nav>
+      <!-- Minimal floating chrome: brand + a single unobtrusive controls toggle.
+           Replaces the old full-width dark navbar. -->
+      <button class="chrome-toggle" id="sidebar-toggle-btn" type="button" title="Hide controls" aria-controls="sidebar">
+        <i class="bi bi-layout-sidebar"></i>
+      </button>
+      <span class="chrome-brand">DyNetSpin</span>
 
-      <div class="offcanvas offcanvas-start sidebar-nav bg-dark offcanvas-show" tabindex="-1" id="sidebar" data-bs-backdrop="false">
+      <div class="offcanvas offcanvas-start sidebar-nav offcanvas-show" tabindex="-1" id="sidebar" data-bs-backdrop="false">
         <div class="offcanvas-body p-0">
           <nav class="navbar-dark">
             <ul class="navbar-nav">
-              <li class="my-4"><hr class="dropdown-divider bg-light" /></li>
-              <li><div class="text-muted small fw-bold text-uppercase px-3 mb-3">Options</div></li>
-              
+              <li><div class="text-muted small fw-bold text-uppercase px-3 mb-2 mt-2">Options</div></li>
+
               <li>
                 <a class="nav-link px-3 sidebar-link" data-bs-toggle="collapse" href="#find-node-options">
                   <span>Find Node</span>
                   <span class="ms-auto"><span class="right-icon"><i class="bi bi-chevron-down"></i></span></span>
                 </a>
                 <div class="collapse" id="find-node-options">
-                  <input list="nodeAuthorList" id="searchInput" class="text-white bg-dark text-center" size="15" placeholder="Type author or ID..." />
+                  <input list="nodeAuthorList" id="searchInput" class="text-white bg-dark" size="15" placeholder="Type author or ID..." />
                   <datalist id="nodeAuthorList"></datalist>
                   <button onclick="searchSelectedNode()">Search</button>
                 </div>
@@ -181,7 +47,7 @@
                   <span class="ms-auto"><span class="right-icon"><i class="bi bi-chevron-down"></i></span></span>
                 </a>
                 <div class="collapse" id="dataset-options">
-                  <div id="dataset-buttons"></div>            
+                  <div id="dataset-buttons" class="px-3"></div>
                 </div>
               </li>
 
@@ -193,11 +59,11 @@
                 <div class="collapse" id="ranking-options">
                   <ul class="navbar-nav ps-3">
                     <li class="d-flex align-items-center justify-content-between">
-                      <button class="btn btn-sm btn-outline-secondary" onclick= "degree_ranking()" type="button">Degree Centrality</button>
+                      <button class="btn btn-sm btn-outline-secondary" onclick="degree_ranking()" type="button">Degree Centrality</button>
                       <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Structural Hubs:</b> Places high-degree nodes at the spiral center to highlight local hubs.</span></span>
                     </li>
                     <li class="mt-2 d-flex align-items-center justify-content-between">
-                      <button class="btn btn-sm btn-outline-secondary" onclick= "volatility_ranking()" type="button">Volatility Centrality</button>
+                      <button class="btn btn-sm btn-outline-secondary" onclick="volatility_ranking()" type="button">Volatility Centrality</button>
                       <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Churn Ranking:</b> Places highly unstable nodes at the spiral center to highlight churning actors.</span></span>
                     </li>
                     <li class="mt-2 d-flex align-items-center justify-content-between">
@@ -216,16 +82,16 @@
                 <div class="collapse" id="filtering-options">
                   <ul class="navbar-nav ps-3">
                     <li>
-                      <label class="form-label text-white">Degree >= <input type="text" id="textInputdeg" value="0" class="text-white bg-dark text-center" size="5"></label>
-                      <input type="range" class="form-range text-white" min="0" max="100" id="Degree" onchange="updateTextInputdeg(this.value)" value="0">
-                    </li>
-                     <li>
-                      <label class="form-label text-white">Volatility>= <input type="text" id="textInputvolatility" value="0" class="text-white bg-dark text-center" size="5"></label>
-                      <input type="range" class="form-range text-white" min="0" max="5" step= "1" id="Vol" onchange="updateTextInputvolatility(this.value)" value="0">
+                      <label class="form-label text-white">Degree &ge; <input type="text" id="textInputdeg" value="0" class="text-white bg-dark text-center" size="5"></label>
+                      <input type="range" class="form-range" min="0" max="100" id="Degree" onchange="updateTextInputdeg(this.value)" value="0">
                     </li>
                     <li>
-                      <label class="text-white mt-2">Temporal Property:</label>
-                      <label class="text-white d-block"><input type="radio" name="nodeFilter" class="form-radio text-white" value="none" checked /> None</label>
+                      <label class="form-label text-white">Volatility &ge; <input type="text" id="textInputvolatility" value="0" class="text-white bg-dark text-center" size="5"></label>
+                      <input type="range" class="form-range" min="0" max="5" step="1" id="Vol" onchange="updateTextInputvolatility(this.value)" value="0">
+                    </li>
+                    <li>
+                      <label class="text-white mt-2 d-block fw-semibold">Temporal Property</label>
+                      <label class="text-white d-block"><input type="radio" name="nodeFilter" class="form-radio" value="none" checked /> None</label>
                       <label class="text-white d-block">
                         <input type="radio" name="nodeFilter" value="incoming" /> Incoming
                         <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="incoming-filter-info">Filters to show only nodes that entered in the <b>current</b> slice.</span></span>
@@ -235,7 +101,7 @@
                         <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="outgoing-filter-info">Filters to show only nodes that will leave in the <b>next</b> slice.</span></span>
                       </label>
                       <label class="text-white d-block">
-                        <input type="radio" name="nodeFilter" value="both" /> Both
+                        <input type="radio" name="nodeFilter" value="both" /> Transient
                         <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="both-filter-info">Filters to show transient nodes that exist <b>only</b> in this slice.</span></span>
                       </label>
                     </li>
@@ -243,77 +109,9 @@
                 </div>
               </li>
 
-              <li>
-                <a class="nav-link px-3 sidebar-link" data-bs-toggle="collapse" href="#color-coding-options">
-                  <span>Color-Coding</span>
-                  <span class="ms-auto"><span class="right-icon"><i class="bi bi-chevron-down"></i></span></span>
-                </a>
-                <div class="collapse" id="color-coding-options">
-                  <ul class="navbar-nav ps-3">
-                    <li class="d-flex align-items-center justify-content-between">
-                      <button class="btn btn-sm btn-outline-secondary" onclick="colorNodesByDensity()">Density</button>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Structural Health:</b> Colors nodes by local edge density (Intensity channel). Warmer = Denser.</span></span>
-                    </li>
-                    <li class="mt-2 d-flex align-items-center justify-content-between">
-                      <button class="btn btn-sm btn-outline-secondary" onclick="colorNodesByVolatility()">Volatility</button>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Global Instability:</b> Colors nodes by total churn over time. Warmer = More Volatile.</span></span>
-                    </li>
-                    <li class="mt-2 d-flex align-items-center justify-content-between">
-                      <button class="btn btn-sm btn-outline-secondary" onclick="colorNodesByLocalVolatility()">Local Volatility</button>
-                       <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Temporal State:</b> Uses distinct Hues to distinguish Incoming, Outgoing, and Stable nodes.</span></span>
-                    </li>
-                    <li class="mt-2 d-flex align-items-center justify-content-between">
-                      <button class="btn btn-sm btn-outline-secondary" onclick="colorNodesByDegree()">Degree</button>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Connectivity:</b> Colors nodes by connection count (Hubs).</span></span>
-                    </li>
-                  </ul>
-                </div>
-              </li>
-
-              <!-- ── LOG-HYBRID ALPHA SECTION ─────────────────────── -->
-              <li>
-                <a class="nav-link px-3 sidebar-link" data-bs-toggle="collapse" href="#alpha-options">
-                  <span>Log-Hybrid α</span>
-                  <span class="ms-auto"><span class="right-icon"><i class="bi bi-chevron-down"></i></span></span>
-                </a>
-                <div class="collapse show" id="alpha-options">
-                  <ul class="navbar-nav ps-3">
-                    <li>
-                      <div class="d-flex justify-content-between align-items-center text-white mb-1">
-                        <label class="form-label text-white mb-0">
-                          α = <input type="text" id="textInputAlpha" value="0.60"
-                                     class="text-white bg-dark text-center" size="4" readonly>
-                        </label>
-                        <span class="badge bg-success" id="paretoLabel"
-                              title="Auto-selected via Pareto analysis">Auto ★</span>
-                      </div>
-                      <input type="range" class="form-range"
-                             min="0" max="1" step="0.05" id="AlphaSlider"
-                             onchange="updateAlpha(this.value)" value="0.60">
-                      <small class="text-muted d-block mt-1" id="alphaHint">
-                        Optimal for this dataset: α = 0.60
-                      </small>
-                      <small class="text-warning d-none mt-1" id="alphaFirstSliceWarning" style="font-size: 0.75rem;">
-                        <span class="info-icon text-warning border-warning" style="width:12px;height:12px;line-height:12px;font-size:8px;">i</span>
-                        α does not affect the first slice (no history).
-                      </small>
-                      <div class="mt-1">
-                        <span class="info-tooltip">
-                          <span class="info-icon">i</span>
-                          <span class="info-text" id="paretoInfo">
-                            <b>α Blending Parameter:</b><br>
-                            α=1.0: Rank by size only (clear layout, no history).<br>
-                            α=0.0: Rank by history only (max stability, cluttered).<br>
-                            <b>Auto</b> finds the α that maximises temporal stability
-                            without degrading radial clarity below ρ ≥ <span id="rhoFloorDisplay">0.70</span>.<br><br>
-                            <span id="paretoDetailsText">Loading sweep data...</span>
-                          </span>
-                        </span>
-                      </div>
-                    </li>
-                  </ul>
-                </div>
-              </li>
+              <!-- Color-Coding and Log-Hybrid α were moved OUT of the sidebar
+                   into the always-visible Encoding bar (#encodingBar) so the
+                   most-used knobs don't require reopening the sidebar. -->
 
             </ul>
           </nav>
@@ -321,140 +119,177 @@
       </div>
 
       <main>
-        <div class="container-fluid">
-          <div class="row g-1">
-            <div class="col-md-4">
-              <div class="card mini-card">
-                <div class="card-body" style="position:relative;">
-                  <div id="nodeTimesliceChart"></div>
-                  <span class="info-tooltip-bottom">
-                    <span class="info-icon">i</span>
-                    <span class="info-text">
-                      <b>Longitudinal Node History:</b><br>
-                      Tracks a single actor's behavior across all time steps.<br>
-                      - <b>Bars:</b> Edge counts per slice.<br>
-                      - <b>Number:</b> Unique community connections (roaming score).
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </div>
-            
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-body" style="position:relative;">
-                  <div id="community_textbox" class="scrollbox"></div>
-                  <span class="info-tooltip-bottom">
-                    <span class="info-icon">i</span>
-                    <span class="info-text"><b>Metadata:</b> Exact identifiers and centrality metrics for the inspected node.</span>
-                  </span>
-                </div>
-              </div>
-            </div>
+        <!-- ── STAGE: full-bleed spiral with panels floating around its edges ── -->
+        <div class="stage">
+          <svg id="chart"></svg>
+          <div id="legend1" hidden></div>
 
-            <div class="col-md-4">
-              <div class="card">
-                <div class="card-body" style="position:relative;">
-                  <div class="row g-2">
-                    <div class="col-6">
-                      <div id="communityMatrix" class="scrollbox"></div>
-                    </div>
-                    <div class="col-6">
-                      <div id="communityMatrixLegend" class="mb-2"></div>
-                    </div>
-                  </div>
-                  <span class="info-tooltip-bottom">
-                    <span class="info-icon">i</span>
-                    <span class="info-text"><b>Micro-Topology View:</b><br>The matrix reveals internal density patterns (e.g., cliques vs. chains) obscured by the spiral geometry.</span>
-                  </span>
-                </div>
+          <!-- Community Evolution overview: a toggle-able, all-slices radial
+               overview that takes the main-chart space. Sits above #chart but
+               below the floating panels (z-index) so the Inspector, Cohort
+               Tracker and timeline stay usable while it is open. -->
+          <div id="communityEvolution" class="evolution-overlay" hidden></div>
+
+          <!-- Left column: Status + Cohort Tracker stacked, flowing (no overlap) -->
+          <div class="floaty-col floaty-col--left">
+          <!-- Status + legend (top-left) -->
+          <aside class="floaty floaty--status" id="statusFloat">
+            <header class="floaty__header">
+              <span class="floaty__title"><i class="bi bi-hurricane"></i> Global Spiral</span>
+              <span class="floaty__spacer"></span>
+              <span class="floaty__chevron"><i class="bi bi-chevron-up"></i></span>
+            </header>
+            <div class="floaty__body">
+              <div id="spiralLegend" class="legend"></div>
+              <div class="floaty__meta">
+                <span><b>Nodes</b> <span id="nodeCount">0</span></span>
+                <span><b>Edges</b> <span id="edgeCount">0</span></span>
+                <span id="ranking_tooltip"><b>Ranking:</b> Degree</span>
+                <span id="color_tooltip"><b>Color-Coding:</b> Local Volatility</span>
               </div>
             </div>
+          </aside>
+
+          <!-- Persistent Cohort Tracker (left, click-driven) -->
+          <aside class="floaty floaty--cohort collapsed" id="cohortFloat">
+            <header class="floaty__header">
+              <span class="floaty__title"><i class="bi bi-bar-chart-fill"></i> Cohort Tracker</span>
+              <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Longitudinal Analysis:</b><br>Click a community to <b>snapshot</b> its membership. This panel tracks those specific nodes across future time slices, even if they migrate or the community dissolves.</span></span>
+              <span class="floaty__spacer"></span>
+              <span class="floaty__chevron"><i class="bi bi-chevron-up"></i></span>
+            </header>
+            <div class="floaty__body">
+              <div id="community_side_widget">
+                <div id="communitySideContainer"></div>
+              </div>
+            </div>
+          </aside>
+
+          <!-- Timeline rail lives in the left column, BELOW the panels, so
+               collapsing the panels frees the space above it for the spiral.
+               ▲/▼ scroll when the slices overflow. -->
+          <div class="time-strip time-strip--v" id="timeStrip">
+            <div class="ts-help">
+              <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Compare slices:</b> <kbd>Shift</kbd>-click 2&ndash;3 time slices to view them side by side. Each node appears once, grouped by when it was present &mdash; the persistent core in the middle, later joiners and early leavers in their own zones, clustered by community.</span></span>
+            </div>
+            <button class="ts-arrow" id="tsUp" type="button" title="Scroll up" hidden><i class="bi bi-chevron-up"></i></button>
+            <div id="year-buttons" class="ts-viewport"></div>
+            <button class="ts-arrow" id="tsDown" type="button" title="Scroll down" hidden><i class="bi bi-chevron-down"></i></button>
+            <div id="ts-unfurl" class="ts-unfurl" hidden></div>
           </div>
+          </div><!-- /.floaty-col--left -->
 
-          <div class="row" id="main-visualization-row">
-            <div class="col-md-8 mb-3" id="main-chart-column">
-              <div class="card h-100">
-                <div class="card-header">
-                  <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                  Global Spiral (Stable Layout)
+          <!-- Inspector: hover-driven trio (right) -->
+          <aside class="floaty floaty--inspector" id="inspectorFloat">
+            <header class="floaty__header">
+              <span class="floaty__title"><i class="bi bi-search"></i> Inspector</span>
+              <span class="floaty__spacer"></span>
+              <span class="floaty__chevron"><i class="bi bi-chevron-up"></i></span>
+            </header>
+            <div class="floaty__body">
+              <!-- Overview-mode panel: shown only while the Community Evolution
+                   overview is open; populated by js/communityEvolution.js. -->
+              <section class="inspector-section inspector-section--overview" id="overviewInspectorSection">
+                <div class="inspector-section__title"><i class="bi bi-diagram-3"></i> Community Evolution</div>
+                <div id="overviewInspector"></div>
+              </section>
+              <section class="inspector-section">
+                <div class="inspector-section__title">Ego Network Across Time
+                  <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Ego Spiral:</b> each ring is a time step, each spoke is one neighbour, and each coloured wedge is one community.<br>- <b>Dot:</b> connected in that slice. No dot means not connected, so a gap in a spoke is someone who left and came back.<br>- <b>✕:</b> connected up to the previous ring and never again.<br>- <b>Colour of a dot:</b> that neighbour's own presence pattern (stayed / left / joined / gapped).<br>- <b>Wedge:</b> the neighbour's community <i>in the slice currently on screen</i> — the same grouping the main chart draws as separate spirals, so the two views always agree. The bold ring marks that slice. Move to another slice and the wedges regroup.<br>- The ego's own community leads, starting at the top; the biggest communities get their own colour and the tail is pooled into "other".<br>- <b>Order:</b> longest-lasting neighbours first inside each wedge.<br>- Hover a spoke to follow one neighbour and see its community in every slice. Click a wedge to track this node plus that community in the Cohort Tracker, or the centre for the whole neighbourhood — the tracked node is drawn at the centre of the card with a heavy border, so two cards compare two ego networks.</span></span>
                 </div>
-                <div class="card-body">
-                  <div class="legend">
-                    <div class="legend-item">
-                      <div class="color-box" style="background-color: #f4a582;"></div>
-                      <span>Outgoing</span>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="outgoing-legend-info"><b>Outgoing:</b> Exists in current slice, disappears in next.</span></span>
-                    </div>
-                    <div class="legend-item">
-                      <div class="color-box" style="background-color: #0571b0;"></div>
-                      <span>Incoming</span>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="incoming-legend-info"><b>Incoming:</b> New arrival; did not exist in previous slice.</span></span>
-                    </div>
-                    <div class="legend-item">
-                      <div class="color-box" style="background-color: #92c5de;"></div>
-                      <span>Stable</span>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="stable-legend-info"><b>Stable:</b> Persistent core; exists in T-1, T, and T+1.</span></span>
-                    </div>
-                    <div class="legend-item">
-                      <div class="color-box" style="background-color: #ca0020;"></div>
-                      <span>Both</span>
-                      <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="transient-legend-info"><b>Transient:</b> Appears and disappears within a single slice.</span></span>
-                    </div>
-                  </div>
-                  <div class="parent">
-                    <div class="child" id="connection_tooltip" style="font-size:14px">
-                      <b>Nodes:</b> <span id="nodeCount">0</span> &emsp;
-                      <b>Edges:</b> <span id="edgeCount">0</span>
-                    </div>
-                    <div class="child" id="ranking_tooltip" style="font-size:14px">
-                      <b>Ranking:</b> Local Volatility
-                    </div>
-                    <div class="child" id="color_tooltip" style="font-size:14px">
-                      <b>Color-Coding:</b> Local Volatility
-                    </div>
-                  </div>
-                  <svg id="chart" width="100%" height="100vh" style="resize:both"></svg>
-                  <div id="legend1" style="display: inline-block"></div>
+                <div id="egoSpiral"></div>
+              </section>
+              <section class="inspector-section">
+                <div class="inspector-section__title">Node History
+                  <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Longitudinal Node History:</b><br>Tracks a single actor's behavior across all time steps.<br>- <b>Bars:</b> Edge counts per slice.<br>- <b>Number:</b> Unique community connections (roaming score).</span></span>
                 </div>
+                <div id="nodeTimesliceChart"></div>
+              </section>
+              <section class="inspector-section">
+                <div class="inspector-section__title">Node Metadata
+                  <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Metadata:</b> Exact identifiers and centrality metrics for the inspected node.</span></span>
+                </div>
+                <div id="community_textbox" class="scrollbox"></div>
+              </section>
+              <section class="inspector-section">
+                <div class="inspector-section__title">Micro-Topology
+                  <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text"><b>Micro-Topology View:</b><br>The matrix reveals internal density patterns (e.g., cliques vs. chains) obscured by the spiral geometry.</span></span>
+                </div>
+                <div class="matrix-body">
+                  <div id="communityMatrix"></div>
+                  <div id="communityMatrixLegend"></div>
+                </div>
+              </section>
+            </div>
+          </aside>
+
+          <!-- Encoding bar: always-visible colour encoding + Log-Hybrid α
+               (hoisted out of the sidebar). -->
+          <div class="encoding-bar" id="encodingBar">
+            <div class="enc-group">
+              <span class="enc-label">Colour</span>
+              <div class="seg" id="colorSeg">
+                <button class="seg-btn seg-btn--cat active" type="button" data-fn="colorNodesByLocalVolatility" onclick="colorNodesByLocalVolatility()">Local Vol</button>
+                <button class="seg-btn seg-btn--ramp" type="button" data-fn="colorNodesByDensity" onclick="colorNodesByDensity()">Density</button>
+                <button class="seg-btn seg-btn--ramp" type="button" data-fn="colorNodesByVolatility" onclick="colorNodesByVolatility()">Volatility</button>
+                <button class="seg-btn seg-btn--ramp" type="button" data-fn="colorNodesByDegree" onclick="colorNodesByDegree()">Degree</button>
               </div>
             </div>
-
-            <div class="col-md-4 mb-3" id="side-chart-column">
-              <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                  <div>
-                    <span class="me-2"><i class="bi bi-bar-chart-fill"></i></span>
-                    Persistent Cohort Tracker
-                  </div>
-                  <span class="info-tooltip">
-                     <span class="info-icon">i</span>
-                     <span class="info-text"><b>Longitudinal Analysis:</b><br>Click a community to <b>snapshot</b> its membership. This panel tracks those specific nodes across future time slices, even if they migrate or the community dissolves.</span>
-                  </span>
-                </div>
-                <div class="card-body">
-                  <div id="community_side_widget">
-                    <div id="communitySideContainer"></div>
-                  </div>
-                </div>
-              </div>
+            <div class="enc-divider"></div>
+            <div class="enc-group">
+              <span class="enc-label">&alpha;</span>
+              <input type="range" class="enc-alpha" min="0" max="1" step="0.05" id="AlphaSlider" onchange="updateAlpha(this.value)" value="0.60">
+              <input type="text" id="textInputAlpha" value="0.60" class="enc-alpha-val" size="4" readonly>
+              <span class="badge" id="paretoLabel" title="Auto-selected via Pareto analysis">Auto &starf;</span>
+              <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="paretoInfo">
+                <b>&alpha; Blending Parameter:</b><br>
+                &alpha;=1.0: Rank by size only (clear layout, no history).<br>
+                &alpha;=0.0: Rank by history only (max stability, cluttered).<br>
+                <b>Auto</b> maximises temporal stability without degrading radial clarity below &rho; &ge; <span id="rhoFloorDisplay">0.70</span>.<br><br>
+                <span id="paretoDetailsText">Loading sweep data...</span>
+              </span></span>
+              <small id="alphaHint" class="enc-hint"></small>
+              <small id="alphaFirstSliceWarning" class="enc-warn d-none"><span class="info-icon">i</span> &alpha; does not affect the first slice.</small>
+            </div>
+            <div class="enc-divider"></div>
+            <div class="enc-group">
+              <button class="seg-btn active" id="labelToggle" type="button"
+                      title="Show/hide community labels (seed anchor or top-degree member) with growth indicators (&#9650;/&#9660; vs previous slice)"
+                      onclick="toggleCommunityLabels()">Labels</button>
+            </div>
+            <div class="enc-divider"></div>
+            <div class="enc-group">
+              <button class="seg-btn active" id="edgeToggle" type="button" aria-pressed="true"
+                      title="Show/hide the community-level edges. The layout does not use edges to place anything, so hiding them costs no positional information and makes individual nodes easier to resolve on dense slices."
+                      onclick="toggleEdges()">Edges</button>
+            </div>
+            <div class="enc-divider"></div>
+            <div class="enc-group">
+              <button class="seg-btn" id="evoToggle" type="button"
+                      title="Community Evolution overview: every community across every slice on one dial. Splits fan out, merges converge. Click a ring's year to open that slice; click a community to track it.">
+                <i class="bi bi-diagram-3"></i> Overview</button>
             </div>
           </div>
         </div>
       </main>
 
       <script src="./js/bootstrap.bundle.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/chart.js@3.0.2/dist/chart.min.js"></script>
+      <script src="./js/chart.min.js"></script>
       <script src="./js/jquery-3.5.1.js"></script>
       <script src="./js/jquery.dataTables.min.js"></script>
       <script src="./js/dataTables.bootstrap5.min.js"></script>
-      <script src="https://d3js.org/d3.v7.min.js"></script>
+      <script src="./js/d3.v7.min.js"></script>
+      <script type="text/javascript" src="js/theme.js"></script>
+      <script type="text/javascript" src="localVolatility.js"></script>
       <script type="text/javascript" src="fitting_data_to_spiral3.js"></script>
+      <script type="text/javascript" src="js/egoSpiral.js"></script>
+      <script type="text/javascript" src="presencePartition.js"></script>
+      <script type="text/javascript" src="js/communityEvolution.js"></script>
       <script type="text/javascript" src="barchart2.js"></script>
       <script type="text/javascript" src="logHybridEngine.js"></script>
       <script type="text/javascript" src="BarChartPopulator.js"></script>
       <script type="text/javascript" src="settings1.js"></script>
-      
+
       <script>
         document.addEventListener('DOMContentLoaded', function() {
           function updateDynamicTooltips(currentYearLabel) {
@@ -464,8 +299,8 @@
             const prevSliceLabel = (currentIndex > 0) ? `<b>${slices[currentIndex - 1]}</b>` : "the previous time slice";
             const nextSliceLabel = (currentIndex < slices.length - 1) ? `<b>${slices[currentIndex + 1]}</b>` : "the next time slice";
             const currentSliceLabelBold = `<b>${currentYearLabel}</b>`;
-            
-            // Legend Tooltips
+
+            // Legend Tooltips (spans are (re)created by renderSpiralLegend when categorical)
             const outgoingLegendInfo = document.getElementById('outgoing-legend-info');
             if (outgoingLegendInfo) {
               outgoingLegendInfo.innerHTML = `<b>Outgoing:</b> Present in ${currentSliceLabelBold}, disappears in ${nextSliceLabel}.`;
@@ -482,8 +317,7 @@
             if (transientLegendInfo) {
               transientLegendInfo.innerHTML = `<b>Transient:</b> Only exists in ${currentSliceLabelBold}.`;
             }
-            
-            
+
             // Filter Tooltips
             const incomingFilterInfo = document.getElementById('incoming-filter-info');
             if (incomingFilterInfo) {
@@ -499,6 +333,11 @@
             }
           }
 
+          // Let the legend renderer refresh slice-aware wording after it rebuilds swatches.
+          window.refreshLegendTooltips = function () {
+            if (window.currentYearRange) updateDynamicTooltips(window.currentYearRange);
+          };
+
           const yearButtonsContainer = document.getElementById('year-buttons');
           if (yearButtonsContainer) {
               const observer = new MutationObserver(function() {
@@ -509,7 +348,7 @@
                                 if (window.currentYearRange) {
                                   updateDynamicTooltips(window.currentYearRange);
                                 }
-                              }, 50); 
+                              }, 50);
                           });
                           button.dataset.tooltipListenerAttached = 'true';
                       }
@@ -524,19 +363,97 @@
 
           const toggleBtn = document.getElementById('sidebar-toggle-btn');
           if (toggleBtn) {
+            const icon = toggleBtn.querySelector('i');
             toggleBtn.addEventListener('click', () => {
-              document.body.classList.toggle('sidebar-collapsed');
-              
-              const icon = toggleBtn.querySelector('i');
-              if (document.body.classList.contains('sidebar-collapsed')) {
-                icon.classList.replace('bi-chevron-bar-left', 'bi-chevron-bar-right');
-                toggleBtn.setAttribute('title', 'Show sidebar');
-              } else {
-                icon.classList.replace('bi-chevron-bar-right', 'bi-chevron-bar-left');
-                toggleBtn.setAttribute('title', 'Hide sidebar');
-              }
+              const collapsed = document.body.classList.toggle('sidebar-collapsed');
+              if (icon) icon.className = collapsed ? 'bi bi-layout-sidebar-reverse' : 'bi bi-layout-sidebar';
+              toggleBtn.setAttribute('title', collapsed ? 'Show controls' : 'Hide controls');
+              // Let the spiral re-fit to the new width after the layout settles.
+              setTimeout(() => window.SpinTrixMainZoom && window.SpinTrixMainZoom.fitAll && window.SpinTrixMainZoom.fitAll(300, 40), 260);
             });
           }
+
+          // Keep the spiral fitted to its container on any resize
+          // (window resize, sidebar toggle). rAF-debounced.
+          const stage = document.querySelector('.stage');
+          if (stage && 'ResizeObserver' in window) {
+            let rafId = null;
+            const ro = new ResizeObserver(() => {
+              if (rafId) cancelAnimationFrame(rafId);
+              rafId = requestAnimationFrame(() => {
+                if (window.SpinTrixMainZoom && window.SpinTrixMainZoom.fitAll) {
+                  window.SpinTrixMainZoom.fitAll(0, 40);
+                }
+              });
+            });
+            ro.observe(stage);
+          }
+
+          // Collapse / expand floating panels by clicking their header.
+          document.querySelectorAll('.floaty__header').forEach(header => {
+            header.addEventListener('click', (e) => {
+              // Don't toggle when interacting with an info tooltip icon.
+              if (e.target.closest('.info-tooltip')) return;
+              header.closest('.floaty').classList.toggle('collapsed');
+            });
+          });
+
+          // Encoding bar: segmented colour control active-state (visual only;
+          // the actual colorNodesBy*() handlers fire via inline onclick).
+          const colorSeg = document.getElementById('colorSeg');
+          if (colorSeg) {
+            colorSeg.addEventListener('click', (e) => {
+              const btn = e.target.closest('.seg-btn');
+              if (!btn) return;
+              colorSeg.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
+            });
+          }
+
+          // ── Tooltip portal ──────────────────────────────────────────────
+          // The inline .info-text popovers were clipped by ancestors that use
+          // overflow:auto/hidden and backdrop-filter (which even traps
+          // position:fixed). Render help text into a single fixed element on
+          // <body>, positioned next to the hovered "i" and CLAMPED to the
+          // viewport (flip above/below, clamp left/right) so it never runs off.
+          (function () {
+            const portal = document.createElement('div');
+            portal.className = 'tooltip-portal';
+            portal.style.display = 'none';
+            document.body.appendChild(portal);
+            let hideTimer = null;
+
+            function show(tip) {
+              const txt = tip.querySelector('.info-text');
+              if (!txt) return;
+              portal.innerHTML = txt.innerHTML;
+              portal.style.display = 'block';
+              portal.style.visibility = 'hidden';
+              const icon = tip.querySelector('.info-icon') || tip;
+              const r = icon.getBoundingClientRect();
+              const pw = portal.offsetWidth, ph = portal.offsetHeight, M = 8;
+              let left = r.left + r.width / 2 - pw / 2;
+              left = Math.max(M, Math.min(left, window.innerWidth - pw - M));
+              let top = r.top - ph - 8;                 // prefer above
+              if (top < M) top = r.bottom + 8;          // flip below if no room
+              top = Math.max(M, Math.min(top, window.innerHeight - ph - M));
+              portal.style.left = left + 'px';
+              portal.style.top = top + 'px';
+              portal.style.visibility = 'visible';
+            }
+            function hide() { portal.style.display = 'none'; }
+
+            document.addEventListener('mouseover', (e) => {
+              const tip = e.target.closest && e.target.closest('.info-tooltip');
+              if (tip) { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; } show(tip); }
+            });
+            document.addEventListener('mouseout', (e) => {
+              const tip = e.target.closest && e.target.closest('.info-tooltip');
+              if (tip) { hideTimer = setTimeout(hide, 80); }
+            });
+            window.addEventListener('scroll', hide, true);
+            window.addEventListener('resize', hide);
+          })();
         });
       </script>
     </div>
