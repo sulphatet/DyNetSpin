@@ -107,6 +107,10 @@ function showdata_spiral_community_chart(data){
   node_to_node_link_data = transform_node_to_node_link_data(data[3]);
 
   data = transform_data(data[0]);
+  // First/last slice have an unobserved neighbour, so their precomputed
+  // incoming/outgoing states are sentinel artifacts. Correct before anything
+  // downstream reads `type` (colour, legend, charts, ego widget).
+  data = correctBoundaryStates(data);
   data = computing_spiral_positions(center_positions_spiral,data,height,width);
   global_data = data;
   global_data_unchanged = data;
@@ -151,14 +155,114 @@ window.addEventListener("load", () => {
     // derive enabled dataset keys preserving file order
     DATASET_KEYS = Object.keys(cfg).filter(k => cfg[k]?.enabled !== false);
 
-    // build DATASET buttons
-    const dsButtons = datasetContainer.selectAll("button")
-      .data(DATASET_KEYS)
-      .enter()
-      .append("button")
-        .attr("class","btn btn-outline-primary btn-sm mx-1")
-        .text(k => cfg[k]?.label || k)
-        .on("click", function(event, key){
+    /* Build the DATASET picker as a two-level grouping rather than one flat
+       row of buttons.
+
+       The two levels are the two things that actually decide how a reader
+       should treat a dataset, and they are independent of each other:
+
+         source  where the partition comes from -- an attribute the data
+                 already carries, or Louvain run on each timeslice. This is the
+                 difference between "these groups are ground truth" and "these
+                 groups are one detector's opinion, renumbered every slice".
+         label   what the name drawn on a community MEANS. A given partition
+                 names itself (a department is a department); a detected one
+                 has no name of its own, so the tool derives one, and which
+                 rule it used is not guessable from the picture.
+
+       Both come from `community` in datasets.config.json, so adding a dataset
+       is a config edit and this function needs no change. A dataset with no
+       `community` block falls into "Unclassified" rather than vanishing. */
+    const COMMUNITY_SOURCE_HEADINGS = {
+      given:    "Given by the data",
+      detected: "Detected per timeslice",
+      unknown:  "Unclassified"
+    };
+    const SOURCE_ORDER = ["given", "detected", "unknown"];
+
+    const meta = k => cfg[k]?.community || {};
+    const srcOf = k => {
+      const s = meta(k).source;
+      return SOURCE_ORDER.indexOf(s) >= 0 ? s : "unknown";
+    };
+
+    // source -> label -> [keys], preserving config order inside each bucket
+    const grouped = new Map();
+    DATASET_KEYS.forEach(k => {
+      const src = srcOf(k), sub = meta(k).label || "unspecified";
+      if (!grouped.has(src)) grouped.set(src, new Map());
+      const subs = grouped.get(src);
+      if (!subs.has(sub)) subs.set(sub, []);
+      subs.get(sub).push(k);
+    });
+
+    /* Which section opens on load: the one holding the dataset that is about
+       to be auto-selected. Opening all of them defeats the collapse, and
+       opening a fixed one hides the dataset the user is looking at. */
+    const openSrc = DATASET_KEYS.length ? srcOf(DATASET_KEYS[0]) : null;
+
+    SOURCE_ORDER.forEach(src => {
+      const subs = grouped.get(src);
+      if (!subs) return;
+      const count = [...subs.values()].reduce((n, a) => n + a.length, 0);
+      const section = datasetContainer.append("div")
+        .attr("class", "ds-group")
+        .classed("ds-group--open", src === openSrc);
+
+      /* The header stays legible collapsed: it names the category and says how
+         many datasets are inside, so a closed section is still an answer to
+         "where is the ground-truth data" rather than a shut drawer. */
+      const head = section.append("button")
+        .attr("class", "ds-group__head")
+        .attr("type", "button")
+        .attr("aria-expanded", src === openSrc ? "true" : "false");
+      head.append("span").attr("class", "ds-group__chev").html("&#9656;");
+      head.append("span").attr("class", "ds-group__title")
+        .text(COMMUNITY_SOURCE_HEADINGS[src]);
+      head.append("span").attr("class", "ds-group__count").text(count);
+
+      const body = section.append("div").attr("class", "ds-group__body");
+      head.on("click", () => {
+        const open = !section.classed("ds-group--open");
+        section.classed("ds-group--open", open);
+        head.attr("aria-expanded", open ? "true" : "false");
+      });
+
+      // One phrase, once, for the whole section -- every dataset in a section
+      // shares its basis by construction of the taxonomy.
+      const bases = [...new Set([...subs.values()].flat()
+                                .map(k => meta(k).basis).filter(Boolean))];
+      if (bases.length === 1) {
+        body.append("div").attr("class", "ds-group__basis").text(bases[0]);
+      }
+
+      subs.forEach((keys, sub) => {
+        const block = body.append("div").attr("class", "ds-sub");
+        block.append("div").attr("class", "ds-sub__head").text("named by " + sub);
+        block.append("div").attr("class", "ds-sub__btns")
+          .selectAll("button").data(keys).enter()
+          .append("button")
+            .attr("class", "btn btn-outline-primary btn-sm ds-btn")
+            /* The tooltip carries the per-dataset detail that would otherwise
+               fragment the grouping -- the specific noun behind a shared rule,
+               or a naming rule that is one dataset's own. */
+            .attr("title", k => {
+              const m = meta(k), name = cfg[k]?.label || k;
+              if (!m.basis) return name;
+              /* A given partition IS the attribute -- nothing derives its
+                 name, so "named by" would be wrong. A detected one has no
+                 name of its own and the rule that supplies one is the thing
+                 worth stating. */
+              return m.source === "given"
+                ? `${name} — ${m.basis}: ${m.note || m.label}.`
+                : `${name} — ${m.basis}; each community is named by ${m.note || m.label}.`;
+            })
+            .text(k => cfg[k]?.label || k)
+            .on("click", datasetClicked);
+      });
+    });
+
+    function datasetClicked(event, key){
           if (window.currentDataset !== key) {
             selectedCommunitySpirals = [];
             globalHighlightNodesMap  = {};
@@ -170,54 +274,277 @@ window.addEventListener("load", () => {
           d3.select(this).classed("active",true);
 
           window.currentDataset = key;
+          window.tsLevel = "fine";          // always start a dataset at its fine level
           loadAllYearsData(key).then(() => {
             runAlphaSelection(key);
             renderYearButtons(key);
+            // AFTER the slice cache resolves: the search list is derived from
+            // allYearsNodeData, and calling this alongside loadAllYearsData
+            // (as it used to be) ran it against an empty cache, leaving the
+            // datalist with zero options on every dataset.
+            loadAuthorMapping();
           });
-          loadAuthorMapping();
-        });
+    }
 
-    // auto-click first dataset if any
-    if (DATASET_KEYS.length) datasetContainer.select("button").dispatch("click");
+    /* Auto-select the first dataset in CONFIG order, not the first in DOM
+       order. Grouping reorders the buttons, so `select("button")` would now
+       open whichever dataset happens to sort into the first section rather
+       than the one the config puts first. */
+    if (DATASET_KEYS.length) {
+      const firstKey = DATASET_KEYS[0];
+      const firstBtn = datasetContainer.selectAll("button")
+        .filter(k => k === firstKey);
+      (firstBtn.empty() ? datasetContainer.select("button") : firstBtn)
+        .dispatch("click");
+    }
   })
   .catch(err => console.error("Failed to load datasets.config.json:", err));
 });
 
 
-function renderYearButtons(datasetKey){
+/* ── Timeline granularity model ───────────────────────────────────────────
+   Each dataset has a FINE level (default) and a COARSE roll-up level. The rail
+   shows the fine slices grouped into coloured coarse "bands"; clicking a band
+   chip rolls up to the coarse level, and a ◀ back button returns to fine.
+   Cohort snapshots (node-id arrays) survive the switch — see setTsLevel. */
+
+window.tsLevel = window.tsLevel || "fine";  // "fine" | "coarse"
+const TS_BAND_HUES = ["#0071e3","#e8890c","#34a853","#a142f4","#00a1b0","#d93b6c","#8a8d00","#6b5bd2"];
+
+function datasetHasChildren(ds){
+  return (ds?.slices || []).some(s => (s.children || []).filter(c => c.enabled !== false).length);
+}
+
+// Active-level slice list. Fine = flattened children (tagged with parent index
+// + label); coarse (or a childless dataset) = the top-level slices.
+function activeLevelSlices(datasetKey){
   const ds = DATASETS_CONFIG[datasetKey];
-  const slices = (ds?.slices || []).filter(s => s.enabled !== false);
+  const coarse = (ds?.slices || []).filter(s => s.enabled !== false);
+  if (window.tsLevel === "coarse" || !datasetHasChildren(ds)){
+    return coarse.map((s, i) => ({ label:s.label, dir:s.dir, parentIdx:i, parentLabel:s.label }));
+  }
+  const out = [];
+  coarse.forEach((s, i) => {
+    (s.children || []).filter(c => c.enabled !== false)
+      .forEach(c => out.push({ label:c.label, dir:c.dir, parentIdx:i, parentLabel:s.label }));
+  });
+  return out;
+}
 
-  window.currentSlices = slices.map(s => s.label);
+// Switch granularity: reload the active level's cross-slice cache + α sweep,
+// re-render the rail, and let updateCommunitySpiralSideWidget re-render any
+// cohort snapshots against the new level (loadData does this).
+function setTsLevel(level, preferDir){
+  window.tsLevel = level;
+  const key = window.currentDataset;
+  if (!key) return;
+  loadAllYearsData(key).then(() => {
+    runAlphaSelection(key);
+    renderYearButtons(key, preferDir);
+  });
+}
 
-  yearContainer.selectAll("*").remove();
+// Per-slice temporal-state breakdown for the event-strip minis.
+function sliceStateBreakdown(label){
+  const dict = allYearsNodeData[label];
+  if (!dict) return null;
+  const c = { incoming:0, outgoing:0, outandin:0, stable:0 };
+  Object.values(dict).forEach(n => {
+    if (n.type === "incoming")      c.incoming++;
+    else if (n.type === "outgoing") c.outgoing++;
+    else if (n.type === "outandin") c.outandin++;
+    else                            c.stable++;
+  });
+  c.total = c.incoming + c.outgoing + c.outandin + c.stable;
+  c.churn = c.total ? (c.total - c.stable) / c.total : 0;
+  return c;
+}
 
-  const yBtns = yearContainer.selectAll("button")
-    .data(slices, s => s.label)
-    .enter()
-    .append("button")
-      .attr("class","btn btn-outline-secondary btn-sm mx-1")
-      .text(s => s.label)
-      .on("click", function(event, slice){
-        yearContainer.selectAll("button").classed("active",false);
-        d3.select(this).classed("active",true);
+/* ── presence wash on the time rail ──────────────────────────────────────────
+   Hovering a node fades the slices that node is not in, so "when did this
+   person exist" is answerable without stepping through every week to find out.
+   The main chart is a snapshot and cannot say it; the rail is the only surface
+   in the layout that is already a timeline.
 
-        // Keep the UI label as the current year range
-        window.currentYearRange = slice.label;
+   PRESENCE, deliberately, not adjacency — "is this person in the data that
+   week", read from the slice node tables. The Ego Spiral answers the adjacency
+   question ("who were they connected to, and when") and answering a different
+   question with the same mark in two places is how the two views end up
+   contradicting each other.
 
-        // Use the actual directory name for loading
-        loadData(datasetKey, slice.dir);
+   Passing null clears. Callers must clear on mouseout AND on slice load: the
+   rail is rebuilt from scratch on a dataset or granularity change, and a wash
+   left behind would then describe a node nobody is hovering. */
+function markSlicePresence(nodeID){
+  const btns = document.querySelectorAll("#year-buttons .ts-btn, #ts-unfurl .ts-btn");
+  if (!btns.length) return;
+  if (nodeID === null || nodeID === undefined
+      || typeof allYearsNodeData === "undefined") {
+    btns.forEach(b => b.classList.remove("ts-btn--nodeabsent"));
+    return;
+  }
+  const id = +nodeID;
+  btns.forEach(b => {
+    const label = b.dataset ? b.dataset.sliceLabel : null;
+    // A button with no slice label is a band chip in the coarse roll-up, which
+    // stands for several slices at once and so has no single answer here.
+    const dict = label ? allYearsNodeData[label] : null;
+    b.classList.toggle("ts-btn--nodeabsent", !!dict && !dict[id]);
+  });
+}
+window.markSlicePresence = markSlicePresence;
 
-        // Toggle alpha warning if it's the first slice
-        const isFirstSlice = (window.currentSlices.indexOf(slice.label) === 0);
-        const warningEl = document.getElementById('alphaFirstSliceWarning');
-        if (warningEl) {
-          if (isFirstSlice) warningEl.classList.remove('d-none');
-          else warningEl.classList.add('d-none');
-        }
+function renderYearButtons(datasetKey, preferDir){
+  const ds = DATASETS_CONFIG[datasetKey];
+  const active = activeLevelSlices(datasetKey);
+  window.currentSlices = active.map(s => s.label);
+
+  // Guidance layer: state shares per slice, and the interior slice with the
+  // highest churn. Boundary slices are excluded from the "hot" marker — their
+  // states are forced (all Incoming at t=0, all Outgoing at t=T−1), so they
+  // would always win without carrying any signal.
+  const breakdowns = {};
+  active.forEach(s => { breakdowns[s.label] = sliceStateBreakdown(s.label); });
+  let hotLabel = null, hotChurn = -1;
+  active.slice(1, -1).forEach(s => {
+    const b = breakdowns[s.label];
+    if (b && b.total && b.churn > hotChurn){ hotChurn = b.churn; hotLabel = s.label; }
+  });
+
+  const viewport = document.getElementById("year-buttons");
+  const upBtn    = document.getElementById("tsUp");
+  const downBtn  = document.getElementById("tsDown");
+  const unfurl   = document.getElementById("ts-unfurl");
+  if (!viewport) return;
+  viewport.innerHTML = "";
+  if (unfurl){ unfurl.hidden = true; unfurl.innerHTML = ""; }
+
+  function clearActive(){
+    document.querySelectorAll("#timeStrip .ts-btn.active").forEach(b => b.classList.remove("active"));
+  }
+  function selectSlice(btn, label, dir){
+    clearActive();
+    btn.classList.add("active");
+    window.currentYearRange = label;
+    loadData(datasetKey, dir);
+    const warn = document.getElementById("alphaFirstSliceWarning");
+    if (warn) warn.classList.toggle("d-none", window.currentSlices.indexOf(label) !== 0);
+  }
+  function mkBtn(s){
+    const btn = document.createElement("button");
+    btn.className = "ts-btn ts-btn--banded";
+    btn.textContent = s.label;
+    btn.title = s.label;
+    btn.dataset.dir = s.dir;
+    btn.dataset.sliceLabel = s.label;
+    btn.style.setProperty("--hue", TS_BAND_HUES[s.parentIdx % TS_BAND_HUES.length]);
+    btn.addEventListener("click", (ev) => {
+      // Shift-click: toggle this slice into the presence-partition compare
+      // mode instead of navigating to it.
+      if (ev.shiftKey && window.PresencePartition){
+        window.PresencePartition.toggle(s.label, s.dir);
+        return;
+      }
+      selectSlice(btn, s.label, s.dir);
+    });
+
+    const b = breakdowns[s.label];
+    if (b && b.total){
+      btn.title = `${s.label} — Incoming ${b.incoming} · Outgoing ${b.outgoing}`
+                + ` · Transient ${b.outandin} · Stable ${b.stable}`;
+      const SC = window.STATE_COLORS || {};
+      const mini = document.createElement("span");
+      mini.className = "ts-mini";
+      [["incoming", SC.incoming], ["outgoing", SC.outgoing],
+       ["outandin", SC.both],     ["stable",   SC.stable]].forEach(([k, col]) => {
+        const v = (k === "stable") ? b.stable : b[k];
+        if (!v) return;
+        const seg = document.createElement("i");
+        seg.style.flexGrow = v;
+        seg.style.background = col || "#999";
+        mini.appendChild(seg);
       });
+      btn.appendChild(mini);
+      if (s.label === hotLabel){
+        btn.classList.add("ts-btn--hot");
+        const pct = Math.round(b.churn * 100);
+        btn.title += ` · highest churn (${pct}%)`;
+        // Real element (not ::after) so the dot has its own hover tooltip.
+        const dot = document.createElement("span");
+        dot.className = "ts-hot-dot";
+        dot.title = `Highest churn: ${pct}% of nodes in ${s.label} are `
+                  + `Incoming, Outgoing, or Transient — the most volatile `
+                  + `interior slice of this dataset.`;
+        btn.appendChild(dot);
+      }
+    }
+    return btn;
+  }
 
-  if (slices.length) yearContainer.select("button").dispatch("click");
+  const banded = (window.tsLevel === "fine") && datasetHasChildren(ds);
+
+  // Coarse view: a ◀ back button to return to the finer default.
+  if (window.tsLevel === "coarse" && datasetHasChildren(ds)){
+    const back = document.createElement("button");
+    back.className = "ts-back";
+    back.innerHTML = '<i class="bi bi-chevron-left"></i>';
+    back.title = "Back to finer slices";
+    back.addEventListener("click", () => setTsLevel("fine", window.tsLastFineDir));
+    viewport.appendChild(back);
+  }
+
+  if (banded){
+    // Group contiguous fine slices by their coarse parent → coloured band + chip.
+    let gi = 0;
+    while (gi < active.length){
+      const pIdx = active[gi].parentIdx;
+      const group = [];
+      while (gi < active.length && active[gi].parentIdx === pIdx){ group.push(active[gi]); gi++; }
+      const hue = TS_BAND_HUES[pIdx % TS_BAND_HUES.length];
+      const groupEl = document.createElement("div");
+      groupEl.className = "ts-group";
+      groupEl.style.setProperty("--hue", hue);
+      const chip = document.createElement("button");
+      chip.className = "ts-band";
+      chip.textContent = group[0].parentLabel;
+      chip.title = "Roll up to " + group[0].parentLabel;
+      chip.addEventListener("click", () => {
+        window.tsLastFineDir = group[0].dir;
+        setTsLevel("coarse", ds.slices[pIdx].dir);
+      });
+      groupEl.appendChild(chip);
+      const col = document.createElement("div");
+      col.className = "ts-group-col";
+      group.forEach(s => col.appendChild(mkBtn(s)));
+      groupEl.appendChild(col);
+      viewport.appendChild(groupEl);
+    }
+  } else {
+    active.forEach(s => viewport.appendChild(mkBtn(s)));
+  }
+
+  // ▲/▼ arrows appear only when the stack overflows the viewport.
+  function refreshArrows(){
+    if (!upBtn || !downBtn) return;
+    const overflow = viewport.scrollHeight > viewport.clientHeight + 2;
+    upBtn.hidden = downBtn.hidden = !overflow;
+    if (overflow){
+      upBtn.disabled   = viewport.scrollTop <= 0;
+      downBtn.disabled = viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 1;
+    }
+  }
+  if (upBtn && !upBtn.dataset.wired){
+    upBtn.dataset.wired = "1";
+    upBtn.addEventListener("click", () => { viewport.scrollBy({top:-140,behavior:"smooth"}); setTimeout(refreshArrows,300); });
+    downBtn.addEventListener("click", () => { viewport.scrollBy({top:140,behavior:"smooth"}); setTimeout(refreshArrows,300); });
+    viewport.addEventListener("scroll", refreshArrows);
+  }
+  setTimeout(refreshArrows, 0);
+
+  // Initial selection: preferred dir (e.g. after a roll-up) else the first slice.
+  let target = preferDir ? viewport.querySelector('.ts-btn[data-dir="' + preferDir + '"]') : null;
+  if (!target) target = viewport.querySelector(".ts-btn");
+  if (target) target.click();
 }
 
 
@@ -229,12 +556,17 @@ function loadAllYearsData(datasetKey){
   allYearsNodeLinks = {};
   allYearsCountData = {};
 
-  const ds = DATASETS_CONFIG[datasetKey];
-  const slices = (ds?.slices || []).filter(s => s.enabled !== false);
+  // Load the ACTIVE granularity level (fine by default, coarse when rolled up).
+  // Set currentSlices now so the α sweep (runAlphaSelection → buildSliceData)
+  // sees the correct level's labels before renderYearButtons runs.
+  const slices = activeLevelSlices(datasetKey);
+  window.currentSlices = slices.map(s => s.label);
 
   const promises = [];
 
-  slices.forEach(slice => {
+  const sliceCount = slices.length;
+
+  slices.forEach((slice, sliceIndex) => {
     const yearLabel = slice.label;   // cache keyed by label for UI lookups
     const yearDir   = slice.dir;     // actual folder path
 
@@ -248,10 +580,19 @@ function loadAllYearsData(datasetKey){
                        undefined;
           dict[+r.node] = {
             centrality : +r.centrality,
+            // Raw as-built state; LocalVolatility.applyToDict below names the
+            // fourth state and, at boundary slices, replaces the unobservable
+            // half of the ±1 window with the half that was observed.
+            rawType    : r.type || "",
             type       : r.type || "",
-            community  : comm
+            community  : comm,
+            name       : r.name || "",
+            anchor     : r.anchor_name || ""
           };
         });
+        if (window.LocalVolatility) {
+          window.LocalVolatility.applyToDict(dict, sliceIndex, sliceCount);
+        }
         allYearsNodeData[yearLabel] = dict;
       });
 
@@ -343,6 +684,14 @@ function loadData(datasetKey, yearDir){
   .then(dataArr=>{
     // ── Use engine-sorted community counts if available ──
     const currentSliceIndex = window.currentSlices.indexOf(window.currentYearRange);
+
+    // Name the fourth state, and at the first/last slice encode the observed
+    // half of the ±1 window instead of the half the data cannot support.
+    // Done here, once, so every consumer of dataArr[0] stays unchanged.
+    if (window.LocalVolatility) {
+      window.LocalVolatility.applyToRows(
+        dataArr[0], currentSliceIndex, window.currentSlices.length);
+    }
     if (window.allSliceSortedCounts.length > 0 && currentSliceIndex >= 0 &&
         window.allSliceSortedCounts[currentSliceIndex]) {
       // Replace the raw commuity_count.csv data (dataArr[6]) with engine-sorted data
@@ -355,7 +704,20 @@ function loadData(datasetKey, yearDir){
 
     showdata_spiral_community_chart(dataArr);
     updateCommunitySpiralSideWidget();
+    /* The ego bands span every slice, so this no longer rebuilds the widget —
+       refresh() only moves the "you are here" ring. It is still called here
+       rather than from the rail click, so the emphasis moves when the slice has
+       actually LOADED and the two views can never disagree. */
+    if (window.EgoSpiral && window.EgoSpiral.refresh) window.EgoSpiral.refresh();
+    // The rail is rebuilt on dataset/granularity change, and a stale presence
+    // wash would survive that as a class on buttons for a different node.
+    markSlicePresence(null);
     autoZoomOnSliceChangeV2({ massThreshold: 0.95, maxGroups: 5, pad: 40, duration: 400 });
+    // Single signal the all-slices views ride: the Community Evolution overview
+    // rebuilds on it (dataset / granularity change) and uses it to fire a
+    // deferred cohort snapshot once the requested slice is on screen.
+    document.dispatchEvent(new CustomEvent("dyn:slice-loaded",
+      { detail: { label: window.currentYearRange } }));
   })
   .catch(err=>console.error("Error loading slice:",err));
 }

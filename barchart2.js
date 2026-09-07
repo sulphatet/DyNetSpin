@@ -31,7 +31,7 @@
     .attr("height", height)
     .append("g")
     .on("dblclick", function(){brushFlag=0
-      d3.selectAll(".spiral_edges").style("stroke-opacity", 1)});
+      resetEdgeOpacity()});
 
 
   }
@@ -48,7 +48,7 @@
       //.attr("transform", `translate(${width / 2}, ${height / 2})`) // Center the spiral
       .on("dblclick", function() {
         brushFlag = 0;
-        d3.selectAll(".spiral_edges").style("stroke-opacity", 1); // Reset edges on double-click
+        resetEdgeOpacity(); // Reset edges on double-click
       });
   }
 
@@ -135,21 +135,12 @@
             if(d.community == activeCommunity) return 1
             else return .1} )
 
-          all_lines = d3.selectAll("line")
-                        .nodes()
-          for (each in all_lines){
-            if(
-            parseInt(all_lines[each].x1.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cx) &&
-            parseInt(all_lines[each].y1.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cy) ||
-            parseInt(all_lines[each].x2.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cx )&&
-            parseInt(all_lines[each].y2.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cy))
-            all_lines[each].style.strokeOpacity = 1
-            else
-            all_lines[each].style.strokeOpacity = 0;
-
-          }
-
-
+          /* Emphasise the edges incident on this community via the bound datum.
+             This used to sweep d3.selectAll("line") — every <line> in the
+             document, including the ego edges — and compare rounded x1/y1
+             against center_positions_spiral[activeCommunity], indexing an array
+             by community id. Edges are <path> now, so x1 does not even exist. */
+          emphasiseCommunityEdges(d.x);
         })
 
       .on("mouseout", function() {
@@ -163,8 +154,7 @@
         d3.selectAll("circle")
         .attr("opacity", 1)
 
-        d3.selectAll(".spiral_edges").style("stroke-opacity", 1)
-        console.log(d3.selectAll(".spiral_edges").style("stroke-opacity"))
+        resetEdgeOpacity();
 
       })
 
@@ -283,18 +273,8 @@ bars
     if(d.community == activeCommunity) return 1
     else return .1} )
 
-    all_lines = d3.selectAll("line")
-    .nodes()
-    for (each in all_lines){
-    if(
-    parseInt(all_lines[each].x1.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cx) &&
-    parseInt(all_lines[each].y1.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cy) ||
-    parseInt(all_lines[each].x2.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cx )&&
-    parseInt(all_lines[each].y2.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cy))
-    all_lines[each].style.strokeOpacity = 1
-    else
-    all_lines[each].style.strokeOpacity = 0;
-    }
+    // Datum test — see the matching note on the bar-chart handler above.
+    emphasiseCommunityEdges(d.target);
 })
 .on("mouseout", function() {
 
@@ -308,9 +288,7 @@ bars
   .attr("opacity", 1)
 
 
-  d3.selectAll(".spiral_edges").style("stroke-opacity", 1)
-  console.log(d3.selectAll(".spiral_edges").style("stroke-opacity"))
-
+  resetEdgeOpacity();
 
 });
 

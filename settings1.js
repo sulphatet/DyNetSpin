@@ -170,18 +170,36 @@ function searchSelectedNode() {
     return;
   }
 
-  // 2) The input is typically "12 - Some Author", so parse out the node ID
-  //    e.g. get everything before the dash and convert to integer
-  let parts = rawValue.split("-");
-  if (!parts || parts.length < 1) {
-    alert("Invalid format. Please select from the autocomplete list.");
-    return;
+  /* 2) Resolve the input to a node id. Three accepted forms, because requiring
+        the exact "12 - Some Author" string meant anyone who typed a name got
+        "Invalid node ID" — and on datasets with no author_mapping.txt the
+        dropdown was empty, so typing a name was the ONLY thing possible.
+          "12"              → bare id
+          "12 - Some Name"  → the datalist format
+          "Some Name"       → name, matched case-insensitively               */
+  let selectedNodeId = NaN;
+
+  if (/^\d+$/.test(rawValue)) {
+    selectedNodeId = parseInt(rawValue, 10);
+  } else {
+    const m = rawValue.match(/^\s*(\d+)\s*-\s*/);   // leading "12 - "
+    if (m) {
+      selectedNodeId = parseInt(m[1], 10);
+    } else {
+      const needle = rawValue.toLowerCase();
+      // Both spellings are searchable: the mapping file's and the CSV's.
+      const pool = [
+        ...(typeof authorMappingArray !== "undefined" ? authorMappingArray : []),
+        ...(global_data_unchanged || []).map(d => ({ id: d.node, name: d.name || "" }))
+      ];
+      let hit = pool.find(e => (e.name || "").toLowerCase() === needle)
+             || pool.find(e => (e.name || "").toLowerCase().includes(needle));
+      if (hit) selectedNodeId = +hit.id;
+    }
   }
-  let idString = parts[0].trim();
-  let selectedNodeId = parseInt(idString);
+
   if (isNaN(selectedNodeId)) {
-    // Could happen if user typed something not in the list
-    alert("Invalid node ID. Please select from the dropdown.");
+    alert('No node matches "' + rawValue + '". Type a node ID, or pick a name from the list.');
     return;
   }
 
@@ -658,16 +676,12 @@ function colorNodesByEign(){
 
 //show and hide edges button
   function edge_visualization(){
-    let opa =d3.selectAll(".spiral_edges").style("stroke-opacity")
-    //console.log(active_community)
-    if (opa ==1){
-      d3.selectAll(".spiral_edges")
-      .style("stroke-opacity", 0)
-    }else{
-      d3.selectAll(".spiral_edges")
-      .style("stroke-opacity", 1)
-
-    }
+    /* State is tracked explicitly rather than inferred from a style read-back.
+       The old version compared style("stroke-opacity") against 1: after any
+       node mouseout cleared the inline style the read returned "", so the first
+       click showed edges instead of hiding them. Edge opacity is also
+       weight-driven now, so there is no single value to compare against. */
+    window.setEdgesHidden(!window.getEdgesHidden());
   }
 
 
@@ -837,10 +851,13 @@ function syncAlphaSliderUI() {
 
   if (slider) slider.value = window.currentBestAlpha;
   if (text)   text.value   = window.currentBestAlpha.toFixed(2);
+  // Wording matches the paper: this is where the slider OPENS, chosen by the
+  // constrained sweep, not an optimum. The analyst sets any alpha they want.
   if (hint)   hint.textContent =
-    'Optimal for this dataset: \u03b1 = ' + window.currentBestAlpha.toFixed(2);
+    'Suggested for this dataset: \u03b1 = ' + window.currentBestAlpha.toFixed(2) +
+    ' \u00b7 drag to explore';
   if (label) {
-    label.textContent = 'Auto \u2605';
+    label.textContent = 'Suggested \u2605';
     label.className   = 'badge bg-success';
   }
   if (rhoDisp) rhoDisp.textContent = window.currentRhoFloor.toFixed(2);

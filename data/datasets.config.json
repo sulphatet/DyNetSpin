@@ -3,74 +3,2182 @@
     "label": "VisPub",
     "enabled": true,
     "slices": [
-      { "label": "2000-2004", "dir": "2000-2004", "enabled": true },
-      { "label": "2005-2009", "dir": "2005-2009", "enabled": true },
-      { "label": "2010-2014", "dir": "2010-2014", "enabled": true },
-      { "label": "2015-2019", "dir": "2015-2019", "enabled": true }
-    ]
+      {
+        "label": "2000-2004",
+        "dir": "2000-2004",
+        "enabled": true
+      },
+      {
+        "label": "2005-2009",
+        "dir": "2005-2009",
+        "enabled": true
+      },
+      {
+        "label": "2010-2014",
+        "dir": "2010-2014",
+        "enabled": true
+      },
+      {
+        "label": "2015-2019",
+        "dir": "2015-2019",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its highest-degree author"
+    }
   },
-"harry_potter": {
+  "harry_potter": {
     "label": "Harry Potter",
     "enabled": true,
     "slices": [
-        { "label": "Book_1", "dir": "Book_1", "enabled": true },
-        { "label": "Book_2", "dir": "Book_2", "enabled": true },
-        { "label": "Book_3", "dir": "Book_3", "enabled": true },
-        { "label": "Book_4", "dir": "Book_4", "enabled": true },
-        { "label": "Book_5", "dir": "Book_5", "enabled": true },
-        { "label": "Book_6", "dir": "Book_6", "enabled": true }
-    ]
+      {
+        "label": "Book_1",
+        "dir": "Book_1",
+        "enabled": true
+      },
+      {
+        "label": "Book_2",
+        "dir": "Book_2",
+        "enabled": true
+      },
+      {
+        "label": "Book_3",
+        "dir": "Book_3",
+        "enabled": true
+      },
+      {
+        "label": "Book_4",
+        "dir": "Book_4",
+        "enabled": true
+      },
+      {
+        "label": "Book_5",
+        "dir": "Book_5",
+        "enabled": true
+      },
+      {
+        "label": "Book_6",
+        "dir": "Book_6",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "house",
+      "note": "house, as the books assign it"
+    }
   },
   "enron_ipr": {
-  "label": "enron_ipr",
-  "enabled": false,
-  "slices": [
-    { "label": "1998", "dir": "1998", "enabled": true },
-    { "label": "1999", "dir": "1999", "enabled": true },
-    { "label": "2000", "dir": "2000", "enabled": true },
-    { "label": "2001", "dir": "2001", "enabled": true },
-    { "label": "2002", "dir": "2002", "enabled": true }
-  ]
-},
-"enron_ipr_new": {
-  "label": "Enron Dataset",
-  "enabled": true,
-  "slices": [
-    { "label": "1999", "dir": "1999", "enabled": true },
-    { "label": "2000", "dir": "2000", "enabled": true },
-    { "label": "2001", "dir": "2001", "enabled": true },
-    { "label": "2002", "dir": "2002", "enabled": true }
-  ]
-},
-"uci_college": {
-  "label": "UCI College",
-  "enabled": true,
-  "slices": [
-    { "label": "0 - 47 Days", "dir": "000-047", "enabled": true },
-    { "label": "48 - 95 Days", "dir": "048-095", "enabled": true },
-    { "label": "96 - 144 Days", "dir": "096-144", "enabled": true },
-    { "label": "145 - 192 Days", "dir": "145-192", "enabled": true }
-  ]
-},
-"smallreddit": {
-  "label": "TinyReddit",
-  "enabled": true,
-  "slices": [
-    { "label": "2005-2007", "dir": "2005-2007", "enabled": true },
-    { "label": "2008-2010", "dir": "2008-2010", "enabled": true },
-    { "label": "2011-2013", "dir": "2011-2013", "enabled": true },
-    { "label": "2014-2016", "dir": "2014-2016", "enabled": true },
-    { "label": "2017-2019", "dir": "2017-2019", "enabled": true }
-  ]
-},
-"infovis data": {
+    "label": "enron_ipr",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "1998",
+        "dir": "1998",
+        "enabled": true
+      },
+      {
+        "label": "1999",
+        "dir": "1999",
+        "enabled": true
+      },
+      {
+        "label": "2000",
+        "dir": "2000",
+        "enabled": true
+      },
+      {
+        "label": "2001",
+        "dir": "2001",
+        "enabled": true
+      },
+      {
+        "label": "2002",
+        "dir": "2002",
+        "enabled": true
+      }
+    ]
+  },
+  "enron_ipr_new": {
+    "label": "Enron Dataset",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "1999",
+        "dir": "1999",
+        "enabled": true
+      },
+      {
+        "label": "2000",
+        "dir": "2000",
+        "enabled": true
+      },
+      {
+        "label": "2001",
+        "dir": "2001",
+        "enabled": true
+      },
+      {
+        "label": "2002",
+        "dir": "2002",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its most-connected person, stored by the builder"
+    }
+  },
+  "uci_college": {
+    "label": "UCI College",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "0 - 47 Days",
+        "dir": "000-047",
+        "enabled": true
+      },
+      {
+        "label": "48 - 95 Days",
+        "dir": "048-095",
+        "enabled": true
+      },
+      {
+        "label": "96 - 144 Days",
+        "dir": "096-144",
+        "enabled": true
+      },
+      {
+        "label": "145 - 192 Days",
+        "dir": "145-192",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its highest-degree member"
+    }
+  },
+  "smallreddit": {
+    "label": "TinyReddit",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "2005-2007",
+        "dir": "2005-2007",
+        "enabled": true
+      },
+      {
+        "label": "2008-2010",
+        "dir": "2008-2010",
+        "enabled": true
+      },
+      {
+        "label": "2011-2013",
+        "dir": "2011-2013",
+        "enabled": true
+      },
+      {
+        "label": "2014-2016",
+        "dir": "2014-2016",
+        "enabled": true
+      },
+      {
+        "label": "2017-2019",
+        "dir": "2017-2019",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its highest-degree user"
+    }
+  },
+  "infovis data": {
     "label": "InfoVis Dataset",
     "enabled": true,
     "slices": [
-      { "label": "2000-2004", "dir": "2000-2004", "enabled": true },
-      { "label": "2005-2009", "dir": "2005-2009", "enabled": true },
-      { "label": "2010-2014", "dir": "2010-2014", "enabled": true },
-      { "label": "2015-2019", "dir": "2015-2019", "enabled": true }
+      {
+        "label": "2000-2004",
+        "dir": "2000-2004",
+        "enabled": true
+      },
+      {
+        "label": "2005-2009",
+        "dir": "2005-2009",
+        "enabled": true
+      },
+      {
+        "label": "2010-2014",
+        "dir": "2010-2014",
+        "enabled": true
+      },
+      {
+        "label": "2015-2019",
+        "dir": "2015-2019",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its highest-degree author"
+    }
+  },
+  "primaryschool": {
+    "label": "Primary School (contact)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "Day 1",
+        "dir": "s00",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D1 AM",
+            "dir": "s00/d0",
+            "enabled": true
+          },
+          {
+            "label": "D1 Noon",
+            "dir": "s00/d1",
+            "enabled": true
+          },
+          {
+            "label": "D1 PM",
+            "dir": "s00/d2",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Day 2",
+        "dir": "s01",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D2 AM",
+            "dir": "s01/d0",
+            "enabled": true
+          },
+          {
+            "label": "D2 Noon",
+            "dir": "s01/d1",
+            "enabled": true
+          },
+          {
+            "label": "D2 PM",
+            "dir": "s01/d2",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "school class",
+      "note": "class in a face-to-face contact study"
+    }
+  },
+  "hospital": {
+    "label": "Hospital Ward (contact)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "Day 1",
+        "dir": "s00",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D1 AM",
+            "dir": "s00/d0",
+            "enabled": true
+          },
+          {
+            "label": "D1 PM",
+            "dir": "s00/d1",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Day 2",
+        "dir": "s01",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D2 AM",
+            "dir": "s01/d0",
+            "enabled": true
+          },
+          {
+            "label": "D2 PM",
+            "dir": "s01/d1",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Day 3",
+        "dir": "s02",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D3 AM",
+            "dir": "s02/d0",
+            "enabled": true
+          },
+          {
+            "label": "D3 PM",
+            "dir": "s02/d1",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Day 4",
+        "dir": "s03",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D4 AM",
+            "dir": "s03/d0",
+            "enabled": true
+          },
+          {
+            "label": "D4 PM",
+            "dir": "s03/d1",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Day 5",
+        "dir": "s04",
+        "enabled": true,
+        "children": [
+          {
+            "label": "D5 AM",
+            "dir": "s04/d0",
+            "enabled": true
+          },
+          {
+            "label": "D5 PM",
+            "dir": "s04/d1",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "role",
+      "note": "ADM / NUR / MED / PAT, in a contact study"
+    }
+  },
+  "bitcoin_otc": {
+    "label": "Bitcoin OTC (trust)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "Y1",
+        "dir": "s00",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Y1Q1",
+            "dir": "s00/d0",
+            "enabled": true
+          },
+          {
+            "label": "Y1Q2",
+            "dir": "s00/d1",
+            "enabled": true
+          },
+          {
+            "label": "Y1Q3",
+            "dir": "s00/d2",
+            "enabled": true
+          },
+          {
+            "label": "Y1Q4",
+            "dir": "s00/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Y2",
+        "dir": "s01",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Y2Q1",
+            "dir": "s01/d0",
+            "enabled": true
+          },
+          {
+            "label": "Y2Q2",
+            "dir": "s01/d1",
+            "enabled": true
+          },
+          {
+            "label": "Y2Q3",
+            "dir": "s01/d2",
+            "enabled": true
+          },
+          {
+            "label": "Y2Q4",
+            "dir": "s01/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Y3",
+        "dir": "s02",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Y3Q1",
+            "dir": "s02/d0",
+            "enabled": true
+          },
+          {
+            "label": "Y3Q2",
+            "dir": "s02/d1",
+            "enabled": true
+          },
+          {
+            "label": "Y3Q3",
+            "dir": "s02/d2",
+            "enabled": true
+          },
+          {
+            "label": "Y3Q4",
+            "dir": "s02/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Y4",
+        "dir": "s03",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Y4Q1",
+            "dir": "s03/d0",
+            "enabled": true
+          },
+          {
+            "label": "Y4Q2",
+            "dir": "s03/d1",
+            "enabled": true
+          },
+          {
+            "label": "Y4Q3",
+            "dir": "s03/d2",
+            "enabled": true
+          },
+          {
+            "label": "Y4Q4",
+            "dir": "s03/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Y5",
+        "dir": "s04",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Y5Q1",
+            "dir": "s04/d0",
+            "enabled": true
+          },
+          {
+            "label": "Y5Q2",
+            "dir": "s04/d1",
+            "enabled": true
+          },
+          {
+            "label": "Y5Q3",
+            "dir": "s04/d2",
+            "enabled": true
+          },
+          {
+            "label": "Y5Q4",
+            "dir": "s04/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "Y6",
+        "dir": "s05",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Y6Q1",
+            "dir": "s05/d0",
+            "enabled": true
+          },
+          {
+            "label": "Y6Q2",
+            "dir": "s05/d1",
+            "enabled": true
+          },
+          {
+            "label": "Y6Q3",
+            "dir": "s05/d2",
+            "enabled": true
+          },
+          {
+            "label": "Y6Q4",
+            "dir": "s05/d3",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its highest-degree trader"
+    }
+  },
+  "email_eu": {
+    "label": "Email EU (dept)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "P1",
+        "dir": "s00",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P1.1",
+            "dir": "s00/d0",
+            "enabled": true
+          },
+          {
+            "label": "P1.2",
+            "dir": "s00/d1",
+            "enabled": true
+          },
+          {
+            "label": "P1.3",
+            "dir": "s00/d2",
+            "enabled": true
+          },
+          {
+            "label": "P1.4",
+            "dir": "s00/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P2",
+        "dir": "s01",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P2.1",
+            "dir": "s01/d0",
+            "enabled": true
+          },
+          {
+            "label": "P2.2",
+            "dir": "s01/d1",
+            "enabled": true
+          },
+          {
+            "label": "P2.3",
+            "dir": "s01/d2",
+            "enabled": true
+          },
+          {
+            "label": "P2.4",
+            "dir": "s01/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P3",
+        "dir": "s02",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P3.1",
+            "dir": "s02/d0",
+            "enabled": true
+          },
+          {
+            "label": "P3.2",
+            "dir": "s02/d1",
+            "enabled": true
+          },
+          {
+            "label": "P3.3",
+            "dir": "s02/d2",
+            "enabled": true
+          },
+          {
+            "label": "P3.4",
+            "dir": "s02/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P4",
+        "dir": "s03",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P4.1",
+            "dir": "s03/d0",
+            "enabled": true
+          },
+          {
+            "label": "P4.2",
+            "dir": "s03/d1",
+            "enabled": true
+          },
+          {
+            "label": "P4.3",
+            "dir": "s03/d2",
+            "enabled": true
+          },
+          {
+            "label": "P4.4",
+            "dir": "s03/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P5",
+        "dir": "s04",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P5.1",
+            "dir": "s04/d0",
+            "enabled": true
+          },
+          {
+            "label": "P5.2",
+            "dir": "s04/d1",
+            "enabled": true
+          },
+          {
+            "label": "P5.3",
+            "dir": "s04/d2",
+            "enabled": true
+          },
+          {
+            "label": "P5.4",
+            "dir": "s04/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P6",
+        "dir": "s05",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P6.1",
+            "dir": "s05/d0",
+            "enabled": true
+          },
+          {
+            "label": "P6.2",
+            "dir": "s05/d1",
+            "enabled": true
+          },
+          {
+            "label": "P6.3",
+            "dir": "s05/d2",
+            "enabled": true
+          },
+          {
+            "label": "P6.4",
+            "dir": "s05/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P7",
+        "dir": "s06",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P7.1",
+            "dir": "s06/d0",
+            "enabled": true
+          },
+          {
+            "label": "P7.2",
+            "dir": "s06/d1",
+            "enabled": true
+          },
+          {
+            "label": "P7.3",
+            "dir": "s06/d2",
+            "enabled": true
+          },
+          {
+            "label": "P7.4",
+            "dir": "s06/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "P8",
+        "dir": "s07",
+        "enabled": true,
+        "children": [
+          {
+            "label": "P8.1",
+            "dir": "s07/d0",
+            "enabled": true
+          },
+          {
+            "label": "P8.4",
+            "dir": "s07/d3",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "department",
+      "note": "organisational unit"
+    }
+  },
+  "uci_msg": {
+    "label": "UCI CollegeMsg (contact)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "M1",
+        "dir": "s00",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 1",
+            "dir": "s00/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 2",
+            "dir": "s00/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 3",
+            "dir": "s00/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 4",
+            "dir": "s00/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "M2",
+        "dir": "s01",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 5",
+            "dir": "s01/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 6",
+            "dir": "s01/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 7",
+            "dir": "s01/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 8",
+            "dir": "s01/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "M3",
+        "dir": "s02",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 9",
+            "dir": "s02/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 10",
+            "dir": "s02/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 11",
+            "dir": "s02/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 12",
+            "dir": "s02/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "M4",
+        "dir": "s03",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 13",
+            "dir": "s03/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 14",
+            "dir": "s03/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 15",
+            "dir": "s03/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 16",
+            "dir": "s03/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "M5",
+        "dir": "s04",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 17",
+            "dir": "s04/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 18",
+            "dir": "s04/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 19",
+            "dir": "s04/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 20",
+            "dir": "s04/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "M6",
+        "dir": "s05",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 21",
+            "dir": "s05/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 22",
+            "dir": "s05/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 23",
+            "dir": "s05/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 24",
+            "dir": "s05/d3",
+            "enabled": true
+          }
+        ]
+      },
+      {
+        "label": "M7",
+        "dir": "s06",
+        "enabled": true,
+        "children": [
+          {
+            "label": "Wk 25",
+            "dir": "s06/d0",
+            "enabled": true
+          },
+          {
+            "label": "Wk 26",
+            "dir": "s06/d1",
+            "enabled": true
+          },
+          {
+            "label": "Wk 27",
+            "dir": "s06/d2",
+            "enabled": true
+          },
+          {
+            "label": "Wk 28",
+            "dir": "s06/d3",
+            "enabled": true
+          }
+        ]
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "highest-degree member",
+      "note": "its highest-degree member"
+    }
+  },
+  "planted_event": {
+    "label": "Synthetic (planted event)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "team",
+      "note": "team, planted by the generator and known by construction"
+    }
+  },
+  "dnc_emails": {
+    "label": "DNC Emails (2016)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "Apr 18",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "Apr 25",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "May 2",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "May 9",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "May 16",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "May 23",
+        "dir": "s05",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "affiliation",
+      "note": "affiliation, read from the e-mail address domain"
+    }
+  },
+  "un_voting": {
+    "label": "UN Voting (blocs)",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "1946–50",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "1951–55",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "1956–60",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "1961–65",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "1966–70",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "1971–75",
+        "dir": "s05",
+        "enabled": true
+      },
+      {
+        "label": "1976–80",
+        "dir": "s06",
+        "enabled": true
+      },
+      {
+        "label": "1981–85",
+        "dir": "s07",
+        "enabled": true
+      },
+      {
+        "label": "1986–90",
+        "dir": "s08",
+        "enabled": true
+      },
+      {
+        "label": "1991–95",
+        "dir": "s09",
+        "enabled": true
+      },
+      {
+        "label": "1996–00",
+        "dir": "s10",
+        "enabled": true
+      },
+      {
+        "label": "2001–05",
+        "dir": "s11",
+        "enabled": true
+      },
+      {
+        "label": "2006–10",
+        "dir": "s12",
+        "enabled": true
+      },
+      {
+        "label": "2011–15",
+        "dir": "s13",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "detected",
+      "basis": "Louvain, run on each timeslice",
+      "label": "voting bloc",
+      "note": "its two highest-degree poles"
+    }
+  },
+  "planted_a": {
+    "label": "Study planted-A",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "team",
+      "note": "team, planted by the generator and known by construction"
+    }
+  },
+  "planted_b": {
+    "label": "Study planted-B",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "team",
+      "note": "team, planted by the generator and known by construction"
+    }
+  },
+  "planted_c": {
+    "label": "Study planted-C",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "team",
+      "note": "team, planted by the generator and known by construction"
+    }
+  },
+  "struct_a": {
+    "label": "Study struct-A",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "struct_b": {
+    "label": "Study struct-B",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_a": {
+    "label": "Study track-A",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_b": {
+    "label": "Study track-B",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_c": {
+    "label": "Study track-C",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_d": {
+    "label": "Study planted-D",
+    "enabled": true,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ],
+    "community": {
+      "source": "given",
+      "basis": "Partition supplied with the data",
+      "label": "team",
+      "note": "team, planted by the generator and known by construction"
+    }
+  },
+  "planted_e": {
+    "label": "Study planted-E",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_f": {
+    "label": "Study planted-F",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_g": {
+    "label": "Study planted-G",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_h": {
+    "label": "Study planted-H",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_i": {
+    "label": "Study planted-I",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_j": {
+    "label": "Study planted-J",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_k": {
+    "label": "Study planted-K",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "planted_l": {
+    "label": "Study planted-L",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_d": {
+    "label": "Study track-D",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_e": {
+    "label": "Study track-E",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_f": {
+    "label": "Study track-F",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_g": {
+    "label": "Study track-G",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "track_h": {
+    "label": "Study track-H",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "struct_c": {
+    "label": "Study struct-C",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "struct_d": {
+    "label": "Study struct-D",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "_probe_test": {
+    "label": "probe",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "_dsearch": {
+    "label": "dsearch",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "_dsearch2": {
+    "label": "d2",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
+    ]
+  },
+  "_a2search": {
+    "label": "a2",
+    "enabled": false,
+    "slices": [
+      {
+        "label": "W1",
+        "dir": "s00",
+        "enabled": true
+      },
+      {
+        "label": "W2",
+        "dir": "s01",
+        "enabled": true
+      },
+      {
+        "label": "W3",
+        "dir": "s02",
+        "enabled": true
+      },
+      {
+        "label": "W4",
+        "dir": "s03",
+        "enabled": true
+      },
+      {
+        "label": "W5",
+        "dir": "s04",
+        "enabled": true
+      },
+      {
+        "label": "W6",
+        "dir": "s05",
+        "enabled": true
+      }
     ]
   }
 }

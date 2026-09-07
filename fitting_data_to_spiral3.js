@@ -70,7 +70,7 @@ var table = d3.select("#table-location")
 
 //--- ADDED FOR LOCAL VOLATILITY ---
 let localVolatilityColFlag = 1;       // 0 => off, 1 => on
-let localVolatilityCenteringFlag = 1; // 0 => off, 1 => reorder outandin->incoming->outgoing->neither
+let localVolatilityCenteringFlag = 0; // 0 => off (default: rank by degree), 1 => reorder outandin->incoming->outgoing->neither
 
 // Robust "invisible brush" that survives dataset switches
 function ensureBrushSkeleton() {
@@ -179,8 +179,17 @@ function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, ei
   // Build optional 'Community Seeded on' line for enron_ipr_new
   let seeded_html = "";
   if (anchor_name && anchor_name !== "" && anchor_name !== "None" && anchor_name !== "undefined") {
-    seeded_html = "<b style='color:#ca0020'>Community Seeded on: </b>" + anchor_name + "<br/><br/>";
+    seeded_html = "<b style='color:#CC79A7'>Community Seeded on: </b>" + anchor_name + "<br/><br/>";
   }
+
+  // Neighbour list: wrap and truncate so a large community doesn't produce an
+  // unbreakable multi-thousand-character line that gets silently clipped.
+  const MAX_NEIGHBOURS_SHOWN = 30;
+  const shownNeighbours = name_of_adjacent_nodes.slice(0, MAX_NEIGHBOURS_SHOWN).join(", ");
+  const hiddenNeighbours = name_of_adjacent_nodes.length - MAX_NEIGHBOURS_SHOWN;
+  const neighboursDisplay = hiddenNeighbours > 0
+      ? (shownNeighbours + " <i>…and " + hiddenNeighbours + " more</i>")
+      : shownNeighbours;
 
   // append the summary to #community_textbox
   d3.select("#community_textbox")
@@ -193,7 +202,7 @@ function draw_textbox(data, adjacent_nodes, activeNode, count, deg, bet, clo, ei
           + "<b>Neighbours within Group:</b> " + count + "<br/>"
           + seeded_html
           + "<b>Neighbours in other Group:</b> " + inter_community_connections + "<br/>"
-          + "<b>List of Neighbours:</b> " + name_of_adjacent_nodes.join(", "))
+          + "<b>List of Neighbours:</b> <span class='neighbour-list'>" + neighboursDisplay + "</span>")
       .style("font-size", "12px");
 }
 
@@ -359,7 +368,7 @@ function find_node_draw_spiral(new_data1){
                       count++;
                       svg_community.append('line')
                             .style("stroke", "#253494" )
-                            .style("strokeOpacity",.5)
+                            .style("stroke-opacity",.5)   // was "strokeOpacity": not a CSS property, silently ignored
                             .style("stroke-width",1.5)
                             .attr("x1", xCoordinateOfActiveNode_new)
                             .attr("y1", yCoordinateOfActiveNode_new)
@@ -371,10 +380,10 @@ function find_node_draw_spiral(new_data1){
                       //--- ADDED FOR LOCAL VOLATILITY ---
                       if (localVolatilityColFlag == 1) {
                         // New local-volatility color logic
-                        if (d.type === "outandin") return "#ca0020";
-                        else if (d.type === "incoming") return "#0571b0";
-                        else if (d.type === "outgoing") return "#f4a582";
-                        else return "#92c5de"; // "neither"
+                        if (d.type === "outandin") return "#CC79A7";
+                        else if (d.type === "incoming") return "#0072B2";
+                        else if (d.type === "outgoing") return "#E69F00";
+                        else return "#8C8C8C"; // "neither"
                       }
                       // Otherwise, fall back to existing flags
                       if (densityColFlag ==1)
@@ -507,10 +516,10 @@ function draw_spiral(new_data1, adjacent_nodes, activeNode) {
 
         /* ---- original flag-driven palette ---- */
         if (localVolatilityColFlag === 1) {
-          if (d.type === "outandin")  return "#ca0020";
-          if (d.type === "incoming")  return "#0571b0";
-          if (d.type === "outgoing")  return "#f4a582";
-          return "#92c5de";
+          if (d.type === "outandin")  return "#CC79A7";
+          if (d.type === "incoming")  return "#0072B2";
+          if (d.type === "outgoing")  return "#E69F00";
+          return "#8C8C8C";
         }
 
         if (densityColFlag)    return colorscaleDensity(d.density);
@@ -761,6 +770,60 @@ function computing_spiral_positions(center_positions_spiral, data_points, height
 
 
 
+/* ── Hover affordances ───────────────────────────────────────────────────
+   Hover is the only way into a node's detail, and a node is a 2px dot, so the
+   feedback has to do three things: confirm WHICH dot is under the pointer,
+   say what its colour means, and stay on screen. These helpers own the first
+   two; positionTooltip owns the third. */
+
+/* The radius a node rests at, so a hover can restore it rather than guessing.
+   Kept next to the hover code because it is the inverse of what the hover
+   does, and the two drifting apart is how a node ends up stuck enlarged. */
+function restingRadius(d){
+  if (!d) return global_radius;
+  if (d.node == find_node_id) return 4;
+  return (highlightNodes.indexOf(d.node) !== -1) ? 3 : global_radius;
+}
+const HOVER_RADIUS_BOOST = 2.6;   // px added to the resting radius on hover
+
+/* The colour channel is the paper's headline encoding and the tooltip never
+   named it, so a reader saw "orange" and had to consult the legend. State
+   names come from LocalVolatility, which owns the vocabulary; the swatch is
+   the same colour the dot is actually drawn in. */
+function hoverStateChip(d){
+  const LV = window.LocalVolatility;
+  if (!LV || localVolatilityColFlag != 1) return "";
+  const labels = window.currentSlices || [];
+  const i = labels.indexOf(window.currentYearRange);
+  const state = LV.normalizeRaw(d.type);
+  const name = (i >= 0 && labels.length)
+    ? LV.labelFor(state, i, labels.length)
+    : (state || "Stable");
+  const col = getColorBasedOnFlags(d);
+  return '<span class="tt-chip"><i style="background:' + col + '"></i>' + name + "</span>";
+}
+
+/* Place the tooltip near the pointer but always inside the viewport. The old
+   version pinned it to (pageX, pageY-28) unconditionally, so a node near the
+   right or bottom edge -- which on a spiral is most of the outer turn -- put
+   its own detail off screen. Flips rather than clamps: a tooltip pinned to the
+   edge covers the node it describes. */
+function positionTooltip(sel, event){
+  const PAD = 12, node = sel.node();
+  if (!node) return;
+  sel.style("left", "0px").style("top", "0px");
+  const box = node.getBoundingClientRect();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let x = event.clientX + 14, y = event.clientY - 28;
+  if (x + box.width  > vw - PAD) x = event.clientX - box.width - 14;
+  if (y + box.height > vh - PAD) y = vh - box.height - PAD;
+  if (y < PAD) y = PAD;
+  if (x < PAD) x = PAD;
+  // position:fixed coordinates, so no scroll offset is added -- the chart is
+  // inside a scrollable column and pageX/pageY drifted from the cursor there.
+  sel.style("left", x + "px").style("top", y + "px");
+}
+
 // Define the div for the tooltip
 var div = d3.select("body").append("div")
   .attr("class", "tooltip")
@@ -768,9 +831,529 @@ var div = d3.select("body").append("div")
 
 var count = 0;
 
+/* Opacity a node should have under the temporal radio-button filter alone.
+   Shared by node enter, hover and mouseout so that hovering can no longer
+   destroy the incoming/outgoing selection on the way out. */
+function nodeFilterOpacity(d){
+  if (!d) return 1;
+  if (window.currentNodeFilter === "incoming")
+    return (d.type === "incoming" || d.type === "outandin") ? 1 : 0.2;
+  if (window.currentNodeFilter === "outgoing")
+    return (d.type === "outgoing" || d.type === "outandin") ? 1 : 0.2;
+  return 1;
+}
+
+/* ── boundary (censored) temporal states ──────────────────────────────────────
+   The `type` column is precomputed by data_parsers/build_dataset.py, which does:
+
+       prev_n = node_sets[i-1] if i > 0 else set()
+       next_n = node_sets[i+1] if i < len-1 else set()
+       inc, out = n not in prev_n, n not in next_n
+
+   The empty-set sentinel says "the world was empty before / will be empty
+   after", so at the FIRST slice every node tests as incoming and at the LAST
+   slice every node tests as outgoing. Enron 2002 is 100% outgoing, Reddit
+   2017-2019 is 88% outgoing. That is an artifact of the sentinel, not a finding
+   — and it is the definitional artifact reviewers flagged.
+
+   The fix needs no new state and no new colour. At a boundary only ONE half of
+   the question is unanswerable:
+
+       first slice — "did it just join?" unknowable; "does it leave?" KNOWN
+       last slice  — "does it leave?"    unknowable; "did it join?"   KNOWN
+
+   The old code destroyed both halves. Here an unknown neighbour slice simply
+   fails to establish its half, so the node falls back to the existing neutral
+   state rather than being asserted into incoming/outgoing. Every slice is
+   loaded client-side already, so this needs no pipeline rerun.
+
+   Applied to boundary slices only, deliberately: interior slices keep whatever
+   the pipeline produced, so this changes nothing that was already well-defined.
+   (Dropping the isFirst/isLast guard would also normalise the interior, which
+   currently disagrees with build_dataset.py for 21–36% of rows depending on
+   dataset — a separate problem, best fixed by regenerating the CSVs.)
+
+   State VOCABULARY lives in localVolatility.js, which is the single source of
+   truth for what the four states mean and how they are labelled. This function
+   keeps its own presence-based derivation — recomputing from the loaded node
+   sets is stronger than remapping the stored value, because it does not trust
+   the pipeline's sentinel at all — but it must emit the same names. In
+   particular the fourth state is "stable", never "": the legend and the bar
+   chart both key on the literal, and a blank draws an unstyled dot.        */
+function correctBoundaryStates(rows) {
+  const labels = window.currentSlices || [];
+  const i = labels.indexOf(window.currentYearRange);
+  if (i < 0 || labels.length < 2) return rows;
+
+  const isFirst = i === 0, isLast = i === labels.length - 1;
+  if (!isFirst && !isLast) return rows;          // interior slices are fine
+
+  // Honour the legacy switch: with boundaryMode "raw" the pipeline's
+  // as-built states are left exactly as they were.
+  const LV = window.LocalVolatility;
+  if (LV && LV.boundaryMode !== "observed") return rows;
+
+  const prev = isFirst ? null : (allYearsNodeData[labels[i - 1]] || {});
+  const next = isLast  ? null : (allYearsNodeData[labels[i + 1]] || {});
+
+  rows.forEach(d => {
+    // null means "unobserved", which can never establish a transition.
+    const joined = prev === null ? false : !prev[d.node];
+    const left   = next === null ? false : !next[d.node];
+    // The fourth state is named, not blank: the legend and the bar chart both
+    // expect the literal "stable", and an empty string draws unstyled. Kept in
+    // sync with localVolatility.js, which owns the state vocabulary.
+    d.type = joined && left ? "outandin"
+           : joined ? "incoming"
+           : left ? "outgoing"
+           : (LV ? LV.normalizeRaw("") : "stable");
+  });
+  return rows;
+}
+window.correctBoundaryStates = correctBoundaryStates;
+
+/* ── hover labels ─────────────────────────────────────────────────────────────
+   On hover the neighbours living in OTHER communities already stay opaque while
+   the rest of the network drops to 0.1 — but an opaque dot three spirals away is
+   indistinguishable from any other dot, so the brokerage the fade exists to
+   reveal was still unreadable. These labels name them.
+
+   Only cross-community neighbours are labelled. Same-community neighbours sit
+   inside the one spiral the eye is already on, and labelling all of them is what
+   turns a hover into a wall of text.
+
+   Scalability comes from three limits, in this order:
+     1. cap the count (MAX_HOVER_LABELS), keeping the highest-degree ones — the
+        brokers you would actually chase;
+     2. drop any label that would collide with one already placed, measured in
+        SCREEN space so the rule holds at every zoom level;
+     3. counter-scale the font by the zoom factor so labels stay legible zoomed
+        out and never balloon zoomed in.                                       */
+const MAX_HOVER_LABELS = 14;
+const HOVER_LABEL_PX   = 10;    // on-screen font size, independent of zoom
+const HOVER_LABEL_GAP  = 13;    // min on-screen separation between two labels
+
+function currentZoomK() {
+  const el = d3.select("#chart").node();
+  if (!el) return 1;
+  try { return d3.zoomTransform(el).k || 1; } catch (e) { return 1; }
+}
+
+/* Greedy, strongest first, skipping anything whose box would overlap one already
+   placed. Boxes are built in DATA space from the on-screen size divided by k, so
+   the same rule holds at every zoom level. Width is estimated from the character
+   count rather than measured: measuring means laying out every candidate in the
+   DOM on every hover, and names here are a single font at a single size, where
+   0.58em per character is accurate enough to separate boxes. */
+function labelBox(it, k) {
+  const fs = HOVER_LABEL_PX / k;
+  const w = (it.text ? it.text.length : 0) * fs * 0.58;
+  const h = fs * 1.25;
+  const cx = it.x + (it.ego ? 0 : 6 / k);
+  const cy = it.y - 6 / k;
+  const x0 = it.ego ? cx - w / 2 : cx;         // ego labels are centre-anchored
+  return { x0: x0, x1: x0 + w, y0: cy - h, y1: cy + h * 0.25 };
+}
+
+function placeHoverLabels(items, k) {
+  const pad = 2 / k;
+  const kept = [], boxes = [];
+  for (const it of items) {
+    if (kept.length >= MAX_HOVER_LABELS) break;
+    const b = labelBox(it, k);
+    let clash = false;
+    for (const p of boxes) {
+      if (b.x0 - pad < p.x1 && p.x0 < b.x1 + pad &&
+          b.y0 - pad < p.y1 && p.y0 < b.y1 + pad) { clash = true; break; }
+    }
+    if (!clash) { kept.push(it); boxes.push(b); }
+  }
+  return kept;
+}
+
+let _hoverLabelItems = null;    // full candidate list, kept for re-placement
+let _hoverLabelG = null;
+
+function drawHoverLabels(g, items) {
+  _hoverLabelItems = items;
+  _hoverLabelG = g;
+  const k = currentZoomK();
+  const kept = placeHoverLabels(items, k);
+  g.selectAll("text.hover-label")
+    .data(kept, d => d.id)
+    .join("text")
+      .attr("class", d => "hover-label" + (d.ego ? " hover-label--ego" : ""))
+      .attr("x", d => d.x + (d.ego ? 0 : 6 / k))
+      .attr("y", d => d.y - 6 / k)
+      .attr("text-anchor", d => d.ego ? "middle" : "start")
+      .style("font-size", (HOVER_LABEL_PX / k) + "px")
+      .style("stroke-width", (3 / k) + "px")
+      .text(d => d.text);
+}
+
+function clearHoverLabels() {
+  _hoverLabelItems = null;
+  _hoverLabelG = null;
+  d3.selectAll("text.hover-label").remove();
+}
+
+/* Zoom changes k, which changes both the font size AND how much data-space each
+   label occupies — so labels that fitted at one zoom can collide at another.
+   Re-running the full placement (rather than just resizing what is already
+   there) is what keeps the no-overlap guarantee true at every zoom level. */
+function rescaleHoverLabels() {
+  if (!_hoverLabelItems || !_hoverLabelG) return;
+  drawHoverLabels(_hoverLabelG, _hoverLabelItems);
+}
+window.clearHoverLabels = clearHoverLabels;
+
+/* ── inter-community edge geometry & styling ──────────────────────────────────
+   One owner for how edges look at rest. Every handler that used to hardcode
+   `stroke-opacity: 1` on mouseout now calls resetEdgeOpacity(), which is why
+   the faint resting weight survives a bar hover.
+
+   Weight is carried by OPACITY rather than stroke mass: widths stay under 2px
+   and overlapping faint strokes accumulate, so a bundle darkens where many
+   edges agree. Both scales are sqrt so mid weights are not crushed. */
+const EDGE_COLOR      = "#6b7280";
+const EDGE_WIDTH      = [0.3, 2.0];
+const EDGE_OPACITY    = [0.06, 0.45];
+const EDGE_DIM        = 0.03;   // non-zero, so context survives an emphasis pass
+const EDGE_EMPHASIS   = 0.75;
+
+let edgeWidthScale   = () => 0.6;
+let edgeOpacityScale = () => 0.2;
+let commIndexById    = new Map();   // community id -> position along the spiral
+let spiralCentroid   = [0, 0];
+let edgesHidden      = false;
+
+// Rebuilt on every render, because α / ranking changes permute the spiral order.
+function buildSpiralEdgeGeometry(){
+  const centres = Array.isArray(center_positions_spiral)
+    ? center_positions_spiral
+    : Object.values(center_positions_spiral || {});
+
+  commIndexById = new Map();
+  centres.forEach((c, i) => { if (c && c.community !== undefined) commIndexById.set(+c.community, i); });
+
+  // link_data.source/target are community IDS. They were previously used as
+  // ARRAY POSITIONS, which only worked because the centres happen to be sorted
+  // by id and ids happen to be dense from 0.
+  spiralCentroid = centres.length
+    ? [centres.reduce((s, c) => s + c.cx, 0) / centres.length,
+       centres.reduce((s, c) => s + c.cy, 0) / centres.length]
+    : [0, 0];
+
+  _spiralSpan = centres.length
+    ? Math.max(d3.max(centres, c => c.cx) - d3.min(centres, c => c.cx),
+               d3.max(centres, c => c.cy) - d3.min(centres, c => c.cy))
+    : 0;
+
+  const maxW = d3.max(link_data || [], d => d.weight) || 1;
+  edgeWidthScale   = d3.scaleSqrt().domain([0, maxW]).range(EDGE_WIDTH).clamp(true);
+  edgeOpacityScale = d3.scaleSqrt().domain([0, maxW]).range(EDGE_OPACITY).clamp(true);
+}
+
+// Both endpoints of an edge, or null when a community is missing this slice.
+function edgeEndpoints(e){
+  const centres = Array.isArray(center_positions_spiral)
+    ? center_positions_spiral
+    : Object.values(center_positions_spiral || {});
+  const i = commIndexById.get(+e.source), j = commIndexById.get(+e.target);
+  if (i === undefined || j === undefined) return null;
+  const a = centres[i], b = centres[j];
+  if (!a || !b) return null;
+  return { i, j, a, b, n: centres.length };
+}
+
+/* Bow a chord by offsetting both control points PERPENDICULAR to it.
+
+   The obvious alternative — pulling the control points toward the spiral
+   centroid — degenerates exactly where it is needed most: an edge spanning the
+   diameter already has its midpoint on the centroid, so there is nothing to
+   pull toward and it renders dead straight. Measured on data_vispub, that
+   version bowed the longest edges LESS than the shortest ones.
+
+   A perpendicular offset of magnitude m displaces the curve midpoint by 0.75·m
+   regardless of where the chord sits, so the bow is always proportional to the
+   distance term. The sign is taken consistently from the source→target
+   direction, so long edges nest the same way round instead of crisscrossing. */
+function bowedPath(x1, y1, x2, y2, amount){
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-6) return `M${x1},${y1}L${x2},${y2}`;
+  const px = -dy / len, py = dx / len;              // unit perpendicular
+  const m  = Math.min(amount, 0.22 * Math.max(spiralSpan(), len));
+  const c1x = x1 + dx * 0.25 + px * m, c1y = y1 + dy * 0.25 + py * m;
+  const c2x = x1 + dx * 0.75 + px * m, c2y = y1 + dy * 0.75 + py * m;
+  return `M${x1},${y1}C${c1x},${c1y} ${c2x},${c2y} ${x2},${y2}`;
+}
+
+function spiralEdgePath(e){
+  const p = edgeEndpoints(e);
+  if (!p) return null;
+  // normalised spiral-order distance; guard n < 2 (harry_potter has 1-3 edges)
+  const t = p.n > 1 ? Math.abs(p.i - p.j) / (p.n - 1) : 0;
+  const chord = Math.hypot(p.b.cx - p.a.cx, p.b.cy - p.a.cy);
+  return bowedPath(p.a.cx, p.a.cy, p.b.cx, p.b.cy, 0.45 * chord * t);
+}
+
+function restingEdgeOpacity(d){
+  return edgesHidden ? 0 : edgeOpacityScale(d && d.weight != null ? d.weight : 0);
+}
+
+function applyEdgeStyle(sel){
+  sel.style("fill", "none")
+     .style("stroke", EDGE_COLOR)
+     .style("stroke-width", d => edgeWidthScale(d && d.weight != null ? d.weight : 0))
+     .style("stroke-opacity", restingEdgeOpacity);
+}
+
+// The single reset every mouseout/toggle should call instead of hardcoding 1.
+function resetEdgeOpacity(){
+  d3.selectAll(".spiral_edges").style("stroke-opacity", restingEdgeOpacity);
+}
+
+/* Ego edges run node→node rather than community→community, so there is no
+   spiral order to appeal to. Bow them by chord length instead: a link to a
+   neighbour in the same community stays almost straight, one reaching across
+   the diagram curves inward and joins the other long reaches. */
+function egoEdgePath(e){
+  const len = Math.hypot(e.x2 - e.x1, e.y2 - e.y1);
+  const t = Math.min(len / Math.max(spiralSpan(), 1), 1);
+  return bowedPath(e.x1, e.y1, e.x2, e.y2, 0.30 * len * t);
+}
+
+// Rough diameter of the laid-out spiral, used to normalise ego chord lengths.
+let _spiralSpan = 0;
+function spiralSpan(){ return _spiralSpan; }
+
+// Emphasise the edges incident on one community; dim the rest without erasing.
+function emphasiseCommunityEdges(commId){
+  d3.selectAll(".spiral_edges").style("stroke-opacity", d => {
+    if (edgesHidden || !d) return 0;
+    return (+d.source === +commId || +d.target === +commId) ? EDGE_EMPHASIS : EDGE_DIM;
+  });
+}
+/* snapshotCommunityCohort() is a top-level function declaration, so it is
+   already reachable as window.snapshotCommunityCohort — do NOT reassign it to a
+   wrapper that calls it by name, which resolves back to the wrapper and blows
+   the stack. */
+window.resetEdgeOpacity = resetEdgeOpacity;
+window.emphasiseCommunityEdges = emphasiseCommunityEdges;
+window.getEdgesHidden = () => edgesHidden;
+window.setEdgesHidden = (on) => { edgesHidden = !!on; resetEdgeOpacity(); };
+
+/* Edges answer a different question from the spiral itself: the layout never
+   reads them, so hiding them removes ink without removing information the
+   positions carry. At several thousand nodes the link layer is what stops a
+   reader resolving individual dots, which is exactly what the spiral exists to
+   let them do -- so this is a first-class control, not a debug hook. */
+window.toggleEdges = function () {
+  window.setEdgesHidden(!edgesHidden);
+  const btn = document.getElementById("edgeToggle");
+  if (btn) {
+    btn.classList.toggle("active", !edgesHidden);
+    btn.setAttribute("aria-pressed", String(!edgesHidden));
+  }
+};
+
+/* One slot per EGO, not per wedge.
+
+   The Tracker holds three snapshots, and Kale et al. 2023 (Table 2, Individual
+   × Comparison) says what three slots are worth: comparing the ego networks of
+   different people — Skilling vs Lay, Keim vs Ma. Clicking each wedge used to
+   push a NEW card, so a single node with five wedges evicted every other ego
+   after three clicks and you ended up comparing one person against themselves.
+
+   So a wedge no longer decides membership; it decides EMPHASIS inside the card
+   that ego already owns. Click a wedge, and if this ego is tracked the existing
+   card highlights that community and leaves the other slots alone.
+
+   Returns true when an existing card absorbed the focus. */
+function focusTrackedEgo(egoID, focus) {
+  /* Matched on the EGO alone. This also required `s.yearRange` to equal the
+     slice on screen, which was right while a wedge meant "this person's
+     community in this week" — but a band spans the whole timeline, so after
+     stepping a week the same band click stopped finding the card and minted a
+     second one for the same person, eating a tracker slot that is meant to hold
+     someone else. A person is the same person in every slice. */
+  /* ...but the SLICE SET still has to match. The presence-partition compare
+     view freezes an ego over a two-slice subset; leaving that view and hovering
+     the same ego on the main chart rebuilds the widget over all 14, and a band
+     click then carried ids drawn from the 14-slice render into the 2-slice
+     card. Almost none of them are in that card's roster, so every member falls
+     outside the focus, the whole card greys uniformly and the click looks like
+     it did nothing. Not matching is the correct answer there: fall through and
+     let a card be built for the set actually on screen. */
+  const span = (window.currentSlices || []).join("|");
+  const card = selectedCommunitySpirals.find(s =>
+    s.egoID != null && +s.egoID === +egoID && (s.sliceSpan || span) === span);
+  if (!card) return false;
+  // Clicking the same wedge twice clears the emphasis rather than doing nothing.
+  const same = card.focus && focus && card.focus.key === focus.key;
+  card.focus = same ? null : focus;
+  updateCommunitySpiralSideWidget();
+  return true;
+}
+window.focusTrackedEgo = focusTrackedEgo;
+
+
+/* Freeze a community (or an arbitrary set, via opts) as a tracked cohort.
+   Extracted from the node click handler so the Ego widget can call it too. */
+/* Fill for a roster member who was not in the slice the cohort was frozen in.
+   Deliberately not borrowed from another slice: `frozenColor` means "the colour
+   this node had when you froze it", and asserting one for someone who was not
+   there is the kind of small lie that later reads as data. */
+const COHORT_ABSENT_FILL = "#c7c9cc";
+let _cohortClickDown = null;
+/* `opts` lets a caller freeze an ARBITRARY set of people rather than a whole
+   community — used by the Ego widget, where the unit is a travel-group.
+     opts.nodeIds : Set|Array of node ids to freeze
+     opts.id      : synthetic identity for de-duplication
+     opts.label   : header text shown in the Cohort Tracker
+     opts.egoID   : the node the set was built around. Drawn at the centre of
+                    the card with a heavy border and named in the header, so
+                    two cards can be read as "Skilling's network vs Lay's"
+                    rather than as two anonymous bags of nodes.            */
+function snapshotCommunityCohort(d, opts) {
+
+  // Identify the timeslice (yearRange) in which the user clicked.
+  let clickedYearRange = window.currentYearRange || "UnknownYear";
+  let commID = opts?.id ?? d.community;
+
+  /* De-duplication. A COMMUNITY is an object of one slice — community 4 in 1975
+     and community 4 in 1995 are different groups — so it is keyed by slice. An
+     EGO is the same person in every slice and its card now holds the whole span,
+     so keying it by slice minted a second card for the same person every time
+     you froze them from a different week. */
+  const clickedSpan = (window.currentSlices || []).join("|");
+  let alreadySelected = selectedCommunitySpirals.find(s =>
+    s.communityID === commID &&
+    (opts?.egoID != null
+      // An ego card is keyed by the span it covers, not by the week you froze
+      // it in. Without the span an ego frozen over a compare subset would block
+      // ever freezing that same person over the full timeline — the de-dup
+      // would match, return early, and the click would do nothing at all.
+      ? (s.sliceSpan || clickedSpan) === clickedSpan
+      : s.yearRange === clickedYearRange)
+  );
+  if (alreadySelected) {
+    return;
+  }
+
+  // Build the *original* community’s data from this timeslice
+  // and freeze the colour each node has *right now*.
+  const wanted = opts?.nodeIds ? new Set([...opts.nodeIds].map(Number)) : null;
+  let originalCommData = global_data
+    .filter(n => wanted ? wanted.has(n.node) : n.community === commID)
+    .map(n => ({
+      ...n,
+      frozenColor: getColorBasedOnFlags(n)
+    }));
+
+  /* An explicit roster comes from the Ego Spiral, whose bands are built from
+     EVERY slice. Filtering it against the slice on screen silently threw away
+     most of what was just clicked: on un_voting it cut a 71-neighbour card to
+     26, and the band headed "Algeria, Eswatini +2" arrived holding one of its
+     four members. The card then dimmed the survivors as "outside the focus" and
+     the result was 24 ghosts around 2 solid dots.
+
+     So carry the absent members in. The tracker already has a mark for "in this
+     cohort, not here this week" — opacityFor's 0.25 — and using it is the whole
+     point of freezing a set and stepping through time. They get a neutral fill
+     rather than a borrowed one: frozenColor means "the colour this node had when
+     you froze it", and for someone who was not there, there is no such colour.
+
+     A community click still resolves against the current slice, because a
+     community IS a one-slice object and there is nothing to carry in. */
+  if (wanted) {
+    const have = new Set(originalCommData.map(n => n.node));
+    const labels = window.currentSlices || [];
+    wanted.forEach(id => {
+      if (have.has(id)) return;
+      for (const l of labels) {
+        const rec = (typeof allYearsNodeData !== "undefined" &&
+                     (allYearsNodeData[l] || {})[id]) || null;
+        if (!rec) continue;
+        originalCommData.push({ ...rec, node: id, frozenColor: COHORT_ABSENT_FILL });
+        break;
+      }
+    });
+  }
+  if (!originalCommData.length) return;
+
+  let originalCommLinks = node_to_node_link_data.filter(e => {
+    let nodeIDs = new Set(originalCommData.map(n => n.node));
+    return nodeIDs.has(e.source) && nodeIDs.has(e.target);
+  });
+
+  // Create an object representing this selection.
+  let selectionObj = {
+    yearRange: clickedYearRange,
+    // The slice set this roster was built over, so a focus computed against a
+    // different one cannot be installed on it. See focusTrackedEgo.
+    sliceSpan: (window.currentSlices || []).join("|"),
+    communityID: commID,
+    label: opts?.label || null,     // used by the header when present
+    egoID: opts?.egoID != null ? +opts.egoID : null,
+    focus: opts?.focus || null,     // {ids:Set, label:String} — emphasis, not membership
+    originalNodeData: originalCommData,
+    originalLinkData: originalCommLinks,
+    randomColorActive: false
+  };
+
+  // If we already have 3 selected, remove the oldest.
+  if (selectedCommunitySpirals.length >= 3) {
+    selectedCommunitySpirals.shift();
+  }
+  selectedCommunitySpirals.push(selectionObj);
+
+  // Auto-expand the Cohort Tracker and pop it out to the right
+  // (body.cohorts-active) so it doesn't cover the timeline.
+  const _cf = document.getElementById("cohortFloat");
+  if (_cf) _cf.classList.remove("collapsed");
+  document.body.classList.add("cohorts-active");
+
+  // Define the highlight colors for each selection.
+  const highlightColors = ["gold", "magenta", "green"];
+  
+  // Build a mapping from node ID to its highlight color.
+  let highlightNodesMap = {};
+  selectedCommunitySpirals.forEach((sel, index) => {
+    let color = highlightColors[index] || "gold";
+    sel.originalNodeData.forEach(nodeObj => {
+      // If a node belongs to more than one selected community,
+      // assign it the color of the earliest selection.
+      if (!(nodeObj.node in highlightNodesMap)) {
+        highlightNodesMap[nodeObj.node] = color;
+      }
+    });
+  });
+  // Store the mapping globally.
+  globalHighlightNodesMap = highlightNodesMap;
+
+  /* Update the main view so that every node gets its assigned
+     colour. Scoped to circle.happy and datum-guarded: an
+     unscoped d3.selectAll("circle") reaches every circle in
+     the DOCUMENT, including the Inspector's ego widget, whose
+     circles carry no datum — `n.node` then throws and aborts
+     this handler one line before the panel is populated,
+     which is what made the Cohort Tracker look dead. */
+  d3.selectAll("circle.happy")
+    .style("stroke", n => (n && globalHighlightNodesMap[n.node]) || "none")
+    .style("stroke-width", n => (n && globalHighlightNodesMap[n.node]) ? 5 : 0);
+
+  // Now update the side widget with the persistent community spirals.
+  updateCommunitySpiralSideWidget();
+}
+
 function draw_spiral_community(){
 if (!ensureBrushSkeleton()) return;
 ensureBrushSkeleton();
+
+  // Any normal repaint dismisses the presence-partition compare chrome.
+  if (window.PresencePartition) window.PresencePartition.reset();
 
   // Remove old inter-community edges to prevent them from stacking up
     g.selectAll(".spiral_edges").remove();
@@ -853,29 +1436,30 @@ if (false) { // set to true only if you really want both brush and zoom
 
   //gBrush.call(brush);
 
-  // scale for edge thickness
-  var max_edge_strength = d3.max(link_data, function(d){return d.weight});
-  var edge_strength_scale = d3.scaleLinear()
-      .domain([0, max_edge_strength])
-      .range([0.4, 6]);
+  /* ── inter-community edges ────────────────────────────────────────────────
+     Communities sit IN ORDER along one Archimedean spiral, so the macro layout
+     is effectively 1-D and an edge is an arc over that ordering. Each edge is a
+     cubic Bézier whose control points are pulled toward the spiral centroid in
+     proportion to how far apart its endpoints are in spiral order:
 
-  // add edges as lines
-  for (let link in link_data){
-    g.append('line')
-      // .attr("class", "spiral_edges")
+       neighbours  → almost no pull, the edge hugs the coil
+       distant     → strong pull, the edge dives inward
+
+     Long-range edges therefore converge into visible trunks — bundling emerges
+     from the layout instead of being iterated, which keeps this O(E) and safe
+     to re-run on every α-slider re-layout. */
+  buildSpiralEdgeGeometry();
+  const spiralEdgeSel = g.selectAll("path.spiral_edges")
+    .data((link_data || []).filter(e => edgeEndpoints(e)))
+    .join("path")
       .attr("class", "spiral_edges non-scaling-stroke")
-      .style("stroke", "#555555")
-      .style("strokeOpacity",0.1)
-      .style("stroke-width", edge_strength_scale(link_data[link].weight))
-      .attr("x1", center_positions_spiral[link_data[link].source].cx)
-      .attr("y1", center_positions_spiral[link_data[link].source].cy)
-      .attr("x2", center_positions_spiral[link_data[link].target].cx)
-      .attr("y2", center_positions_spiral[link_data[link].target].cy)
-      .on("mouseover", function(event, d){
-        show_edge_tooltip(d.source, d.target, d.weight);
-      });
-  }
-  g.selectAll(".spiral_edges").data(link_data).enter();
+      .attr("d", spiralEdgePath);
+  applyEdgeStyle(spiralEdgeSel);
+  /* No mouseover binding: edges are `pointer-events: none` so they cannot steal
+     hover from the nodes underneath. show_edge_tooltip() has had its body
+     commented out for some time and is a no-op; to bring the edge tooltip back,
+     restore that body, drop pointer-events on .spiral_edges, and rebind here —
+     the datum now carries source/target/weight correctly via the data join. */
 
   // draw nodes
   var node = g.selectAll("circle")
@@ -903,10 +1487,10 @@ if (false) { // set to true only if you really want both brush and zoom
                     
                     //--- ADDED FOR LOCAL VOLATILITY ---
                     if (localVolatilityColFlag == 1) {
-                      if (d.type === "outandin") return "#ca0020";
-                      else if (d.type === "incoming") return "#0571b0";
-                      else if (d.type === "outgoing") return "#f4a582";
-                      else return "#92c5de";
+                      if (d.type === "outandin") return "#CC79A7";
+                      else if (d.type === "incoming") return "#0072B2";
+                      else if (d.type === "outgoing") return "#E69F00";
+                      else return "#8C8C8C";
                     }
 
                     if (densityColFlag ==1) {
@@ -943,386 +1527,251 @@ if (false) { // set to true only if you really want both brush and zoom
                         return colorscaleVolatility(d.volatility);
                     }
                   })
-                  .style("opacity", function(d) {
-                    // Adjust based on the global radio-button filter
-                    if (window.currentNodeFilter === "incoming") {
-                      return d.type === "incoming" || d.type === "outandin" ? 1 : 0.2;
-                    } else if (window.currentNodeFilter === "outgoing") {
-                      return d.type === "outgoing" || d.type === "outandin" ? 1 : 0.2;
-                    } else {
-                      return 1;
-                    }
-                  })
+                  .style("opacity", nodeFilterOpacity)
                   .attr("pointer-events", "all")
                   .on("mouseover", function(event, d) {
-                      div.transition()
-                          .duration(200)
-                          .style("opacity", .9);
+                      /* Single hover handler.
 
+                         There used to be TWO `mouseover` registrations on this
+                         selection. D3's selection.on(type, fn) replaces the
+                         listener for a typename, so the first was silently dead
+                         — along with everything only it did: the Cohort Tracker
+                         ellipse highlight, the table row highlight, and the
+                         community edge emphasis. Those are merged back in here.
+
+                         Deliberately NOT revived:
+                         • draw_spiral(), which renders into #community_spiral.
+                           That panel no longer exists in index.html (the Cohort
+                           Tracker replaced it), so the call would throw on a
+                           null getBoundingClientRect().
+                         • the activeCommunity/activeNode/activeName globals,
+                           which nothing in the codebase reads. The behaviour
+                           they were meant to drive is done from `d` directly. */
+                      div.transition().duration(200).style("opacity", .9);
+
+                      const activeNodeId = d.node;
+
+                      const adjacent_nodes      = connections_list[activeNodeId] || [];
+                      const communityNodesData  = global_data.filter(n => n.community === d.community);
+
+                      // Set membership instead of the old nested filter/some scan
+                      const commMembers = new Set(communityNodesData.map(n => n.node));
+                      const intraCommunityCollaborators =
+                        adjacent_nodes.reduce((c, id) => c + (commMembers.has(id) ? 1 : 0), 0);
+                      const crossCount = adjacent_nodes.length - intraCommunityCollaborators;
+
+                      /* The tooltip answers what the hover cannot show: what
+                         the dot's colour means, which group it belongs to by
+                         NAME rather than by an id that is renumbered every
+                         timeslice, and how its neighbours split inside/outside
+                         that group -- which is the split the ego edges drawn
+                         below are about. */
                       if (flag_most_connected_nodes){
-                        div.html("<b>Community:</b> " + d.community)
-                           .style("left", (event.pageX) + "px")
-                           .style("top", (event.pageY - 28) + "px");
+                        div.html("<b>Community:</b> " + d.community);
                       } else {
-                        div.html("<b>Name:</b> "+ d.name +"<br/>"
-                               + "<b>Node ID:</b> "+ d.node +"<br/>"
-                               + "<b>Group:</b> " + d.community + "<br/>"
-                               + "<b>Total Collaborators:</b> "+ d.centrality)
-                           .style("left", (event.pageX) + "px")
-                           .style("top", (event.pageY - 28) + "px")
-                           .style("text-align", "left");
+                        const groupName = (d.anchor_name && String(d.anchor_name).trim())
+                          ? d.anchor_name : ("Community " + d.community);
+                        div.html(
+                          '<div class="tt-name">' + (d.name || ("Node " + d.node)) + "</div>"
+                          + hoverStateChip(d)
+                          + '<div class="tt-row"><span>Group</span><b>' + groupName + "</b></div>"
+                          + '<div class="tt-row"><span>Neighbours</span><b>' + adjacent_nodes.length
+                          + "</b></div>"
+                          + '<div class="tt-sub">' + intraCommunityCollaborators
+                          + " in this group · " + crossCount + " outside</div>"
+                          + '<div class="tt-row"><span>Node</span><b>' + d.node + "</b></div>"
+                        ).style("text-align", "left");
                       }
-                      drawNodeTimesliceChart(d.node);
-                      
+                      positionTooltip(div, event);
 
-                      activeCommunity = d.community;
-                      activeNode = d.node;
-                      activeName = d.name;
-                      let xCoordinateOfActiveNode = d.x;
-                      let yCoordinateOfActiveNode = d.y;
+                      /* Grow the dot under the pointer. At a 2px resting radius
+                         the only confirmation of WHICH dot you are reading was
+                         the tooltip's own text, which is the thing you are
+                         trying to check. Sized off restingRadius so a search
+                         hit or a highlighted node keeps its own emphasis. */
+                      d3.select(this).raise()
+                        .transition().duration(90)
+                        .attr("r", restingRadius(d) + HOVER_RADIUS_BOOST);
 
-                      d3.selectAll(".sideCommEllipse")
-                      .filter(n => n.node === d.node)
-                      .style("stroke", "orange")       // or some highlight color
-                      .style("stroke-width", 5);
-
-                      
-
-                      // show adjacent node
-                      let adjacent_nodes = connections_list[activeNode];
-
-                      d3.selectAll("circle")
-                        .attr("r", function(n){
-                          if (adjacent_nodes.includes(n.node))
-                            return global_radius;
-                          else
-                            return global_radius;
-                        })
-                        .style("fill", function(n){
-                          if (adjacent_nodes.includes(n.node)){
-                            // find edge
-                            let edge = node_to_node_link_data.find(e => 
-                              (e.source === activeNode && e.target === n.node) || 
-                              (e.target === activeNode && e.source === n.node)
-                            );
-                            if (edge) {
-                              let edgecolor = "#253494";
-                              // The new color logic if we want to highlight differently:
-                              if (window.currentNodeFilter === "incoming" && edge.type !== "incoming") {
-                                // skip
-                                edgecolor = "#253494";
-                              } else if (window.currentNodeFilter === "outgoing" && edge.type !== "outgoing") {
-                                // skip
-                                edgecolor = "#253494";
-                              } else {
-                                // color edges based on type
-                                if (edge.type === "incoming") edgecolor = "#0571b0";
-                                else if (edge.type === "outgoing") edgecolor = "#f4a582";
-                                else if (edge.type === "outandin") edgecolor = "#ca0020";
-                              }
-                              // g.append('line')
-                              //   .attr("class", "adjacent_edges")
-                              //   .style("stroke", edgecolor)
-                              //   .style("strokeOpacity", .5)
-                              //   .style("stroke-width", 1)
-                              //   .attr("x1", function(){
-                              //     if (brushFlag==1) return xScale(xCoordinateOfActiveNode);
-                              //     else return xCoordinateOfActiveNode;
-                              //   })
-                              //   .attr("y1", function(){
-                              //     if (brushFlag==1) return yScale(yCoordinateOfActiveNode);
-                              //     else return yCoordinateOfActiveNode;
-                              //   })
-                              //   .attr("x2", function(){
-                              //     if (brushFlag==1) return xScale(n.x);
-                              //     else return n.x;
-                              //   })
-                              //   .attr("y2", function(){
-                              //     if (brushFlag==1) return yScale(n.y);
-                              //     else return n.y;
-                              //   });
-                              g.append('line')
-                                  .attr("class", "adjacent_edges non-scaling-stroke")
-                                  .style("stroke", edgecolor)
-                                  .style("strokeOpacity", .5)
-                                  .style("stroke-width", 1)
-                                  .attr("x1", () => xCoordinateOfActiveNode)
-                                  .attr("y1", () => yCoordinateOfActiveNode)
-                                  .attr("x2", () => n.x)
-                                  .attr("y2", () => n.y);
-
-                            }
-                            return "#253494";
-                          }
-                          else {
-                            //--- ADDED FOR LOCAL VOLATILITY ---
-                            if (localVolatilityColFlag == 1) {
-                              if (n.type === "outandin") return "#ca0020";
-                              else if (n.type === "incoming") return "#0571b0"; 
-                              else if (n.type === "outgoing") return "#f4a582";
-                              else return "#92c5de";
-                            }
-
-                            if (densityColFlag ==1)
-                              return colorscaleDensity(n.density);
-                            else if (degreeColFlag==1){
-                              if (n.centrality>extent_of_centralities_after_removing_outliers.degree_range[1])
-                                return "black";
-                              else
-                                return colorscaleDegree(n.centrality);
-                            }
-                            else if (closenessColFlag==1){
-                              if (n.closeness > extent_of_centralities_after_removing_outliers.closeness_range[1])
-                                return "black";
-                              else
-                                return colorscaleCloseness(n.closeness);
-                            }
-                            else if (betweennessColFlag==1){
-                              if (n.betwness > extent_of_centralities_after_removing_outliers.betwness_range[1])
-                                return "black";
-                              else
-                                return colorscaleBetwness(n.betwness);
-                            }
-                            else if (eignColFlag==1){
-                              if (n.eign > extent_of_centralities_after_removing_outliers.eign_range[1])
-                                return "black";
-                              else
-                                return colorscaleEign(n.eign);
-                            }
-                            else if (volatilityColFlag==1){
-                              if (n.volatility > extent_of_centralities_after_removing_outliers.volatility_range[1])
-                                return "black";
-                              else
-                                return colorscaleVolatility(n.volatility);
-                            }
-                          }
+                      /* Mute this community's own label. It is drawn at the
+                         glyph centre, on top of the dots being inspected. */
+                      d3.selectAll("text.community-label")
+                        .classed("community-label--muted", function(){
+                          return this.getAttribute("data-community") == d.community;
                         });
 
-                      new_data1 = global_data.filter(function(client){
-                        return client.community==d.community;
-                      });
-                      draw_spiral(new_data1, adjacent_nodes, activeNode);
-                      drawCommunityAdjMatrix(new_data1, node_to_node_link_data);
-                      drawNodeTimesliceChart(d.node);
-                      highlightMatrixNode(d.node);
+                      draw_textbox(
+                        communityNodesData,            // data for all nodes in the group
+                        adjacent_nodes,                // all collaborator IDs
+                        activeNodeId,                    // the hovered node
+                        intraCommunityCollaborators,   // collaborators inside the group
+                        d.centrality,                  // degree
+                        d.betwness,
+                        d.closeness,
+                        d.eign,
+                        d.name,
+                        d.anchor_name
+                      );
+                      drawCommunityAdjMatrix(communityNodesData, node_to_node_link_data);
+                      drawNodeTimesliceChart(activeNodeId);
+                      highlightMatrixNode(activeNodeId);
+                      if (window.EgoSpiral) window.EgoSpiral.show(activeNodeId);
+                      // Fade the weeks this node is not in. Cleared on mouseout
+                      // and again on slice load — see markSlicePresence.
+                      if (window.markSlicePresence) window.markSlicePresence(activeNodeId);
 
-                      // highlight row in the table
-                      d3.selectAll("tr").style("background-color", function(dat,i){
-                        if (dat!== undefined) {
-                          if(dat.node == find_node_id)
-                            return "blue";
-                          else if (dat.node == activeNode)
-                            return "orange";
-                          else
-                            return "transparent";
-                        }
-                      });
+                      // Cohort Tracker: mark this node wherever it is tracked
+                      d3.selectAll(".sideCommEllipse")
+                        .filter(n => n && n.node === d.node)
+                        .style("stroke", "orange")
+                        .style("stroke-width", 5);
 
+                      /* Ego edges as a single data join, inserted beneath the
+                         nodes. The old code appended one <line> at a time and
+                         called .lower() on each — O(n) DOM churn per hover. */
+                      const posByNode = new Map(global_data.map(n => [n.node, n]));
+                      const egoEdges = [];
+                      adjacent_nodes.forEach(neighborId => {
+                        const neighborNode = posByNode.get(neighborId);
+                        if (!neighborNode) return;      // neighbour absent this slice
+                        const edge = node_to_node_link_data.find(e =>
+                          (e.source === activeNodeId && e.target === neighborId) ||
+                          (e.target === activeNodeId && e.source === neighborId));
+                        if (!edge) return;
+                        egoEdges.push({ x1: d.x, y1: d.y,
+                                        x2: neighborNode.x, y2: neighborNode.y,
+                                        type: edge.type });
+                      });
+                      g.selectAll("path.adjacent_edges")
+                        .data(egoEdges)
+                        .join(enter => enter.insert("path", ":first-child"))
+                          .attr("class", "adjacent_edges non-scaling-stroke")
+                          .attr("d", egoEdgePath)
+                          .style("fill", "none")
+                          .style("stroke", e => getEdgeColorByType(e.type))
+                          // Opaque: these are the focal edges of the hover, and
+                          // the cross-community ones are the whole point.
+                          .style("stroke-opacity", .85)
+                          .style("stroke-width", 1.3);
+
+                      /* Fade everything outside the hovered community — EXCEPT
+                         this node's own neighbours, which stay fully visible
+                         wherever they live. Cross-community edges otherwise
+                         terminate on dimmed nodes, so the edge appears to lead
+                         nowhere and brokerage is unreadable.
+
+                         Must use .style(), not .attr(): node enter sets an
+                         inline style opacity, which always beats the attribute,
+                         so the old .attr("opacity", …) fade never rendered. */
                       if (!flag_most_connected_nodes){
-                        d3.selectAll("circle")
-                          .attr("opacity", function(n){
-                            if(n.community == activeCommunity) return 1;
-                            else return 0.1;
-                          });
+                        const neighbourIds = new Set(adjacent_nodes);
+                        d3.selectAll("circle.happy").style("opacity", n => {
+                          if (!n) return 1;
+                          const kept = n.community === d.community || neighbourIds.has(n.node);
+                          return kept ? nodeFilterOpacity(n) : 0.1;
+                        });
                       }
 
-                      if(brushFlag==0){
-                        let all_lines = d3.selectAll(".spiral_edges")
-                            .nodes();
-                        for (let each in all_lines){
-                          if(
-                            parseInt(all_lines[each].x1.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cx) &&
-                            parseInt(all_lines[each].y1.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cy) ||
-                            parseInt(all_lines[each].x2.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cx )&&
-                            parseInt(all_lines[each].y2.baseVal.value) == parseInt(center_positions_spiral[activeCommunity].cy)
-                          ) {
-                            all_lines[each].style.strokeOpacity = 1;
-                          }
-                          else {
-                            all_lines[each].style.strokeOpacity = 0;
-                          }
-                        }
+                      /* Name the neighbours that sit in OTHER spirals. They were
+                         already kept opaque above; without a name an opaque dot
+                         across the canvas is just another dot. Highest degree
+                         first, so the cap keeps the brokers. */
+                      const crossLabels = adjacent_nodes
+                        .map(id => posByNode.get(id))
+                        .filter(n => n && n.community !== d.community)
+                        .sort((a, b) => (b.centrality || 0) - (a.centrality || 0))
+                        .map(n => ({ id: n.node, x: n.x, y: n.y,
+                                     text: n.name || ("Node " + n.node), ego: false }));
+                      drawHoverLabels(g, [
+                        { id: d.node, x: d.x, y: d.y,
+                          text: d.name || ("Node " + d.node), ego: true },
+                        ...crossLabels
+                      ]);
+
+                      // Highlight the row in the table, when one is rendered
+                      d3.selectAll("tr").style("background-color", function(dat){
+                        if (dat === undefined) return null;
+                        if (dat.node == find_node_id) return "blue";
+                        if (dat.node == activeNodeId)   return "orange";
+                        return "transparent";
+                      });
+
+                      /* Emphasise the community-level edges incident on this
+                         community — a test on the bound datum. The previous
+                         version compared rounded x1/y1 coordinates against a
+                         centroid, which is both fragile and impossible now that
+                         edges are <path> (SVGPathElement has no x1). */
+                      if (brushFlag == 0){
+                        emphasiseCommunityEdges(d.community);
                       } else {
                         d3.selectAll(".spiral_edges").style("stroke-opacity", 0);
                       }
                   })
-                 
-.on("mouseover", function(event, d) {
-    // --- Standard tooltip logic (unchanged) ---
-    div.transition()
-        .duration(200)
-        .style("opacity", .9);
+                  .on("mouseout", function(event, d) {
+                    div.transition().duration(300).style("opacity", 0);
+                    clearHoverLabels();
+                    d3.selectAll(".adjacent_edges").remove();
+                    if (window.markSlicePresence) window.markSlicePresence(null);
 
+                    /* Undo the hover emphasis. Restored to restingRadius rather
+                       than to a constant, so a node that is also the search hit
+                       or a highlighted node keeps the radius that state gives
+                       it. Same duration as the grow, so a sweep across a dense
+                       glyph settles instead of pulsing. */
+                    d3.select(this).transition().duration(90)
+                      .attr("r", restingRadius(d));
+                    d3.selectAll("text.community-label")
+                      .classed("community-label--muted", false);
 
+                    /* Restore the temporal filter's dimming rather than forcing
+                       every node to full opacity — the old reset destroyed the
+                       incoming/outgoing selection after the first hover. */
+                    d3.selectAll("circle.happy").style("opacity", nodeFilterOpacity);
 
-    div.html("<b>Name:</b> "+ d.name +"<br/>"
-            + "<b>Node ID:</b> "+ d.node +"<br/>"
-            + "<b>Group:</b> " + d.community + "<br/>"
-            + "<b>Total Collaborators:</b> "+ d.centrality)
-        .style("left", (event.pageX) + "px")
-        .style("top", (event.pageY - 28) + "px")
-        .style("text-align", "left");
-    
-    // --- Get data for the hovered node's community ---
-    const activeNodeId = d.node;
-    const activeCommunityId = d.community;
-    const adjacent_nodes = connections_list[activeNodeId] || [];
-    
-    // Filter global data for nodes ONLY in the hovered community
-    const communityNodesData = global_data.filter(n => n.community === activeCommunityId);
+                    // Restore the weight-driven resting opacity. Setting this to
+                    // null used to leave an empty computed value, which is what
+                    // broke the edge-visibility toggle's state read-back.
+                    resetEdgeOpacity();
 
-    // Count how many collaborators are within the same community
-    const intraCommunityCollaborators = adjacent_nodes.filter(adjId => 
-        communityNodesData.some(commNode => commNode.node === adjId)
-    ).length;
-
-    // --- CORRECTED FUNCTION CALLS ---
-    // 1. Update the community textbox with detailed info
-    draw_textbox(
-        communityNodesData,            // Data for all nodes in the group
-        adjacent_nodes,                // List of all collaborator IDs
-        activeNodeId,                  // The ID of the hovered node
-        intraCommunityCollaborators,   // Count of collaborators within the group
-        d.centrality,                  // Degree (total collaborators)
-        d.betwness,
-        d.closeness,
-        d.eign,
-        d.name,                        // Name of the hovered author
-        d.anchor_name                  // Seed anchor name (enron_ipr_new only)
-    );
-
-    // 2. Update the community adjacency matrix
-    drawCommunityAdjMatrix(communityNodesData, node_to_node_link_data);
-    
-    // 3. Update the node's historical bar chart
-    drawNodeTimesliceChart(activeNodeId);
-    
-    // 4. Highlight the node in the matrix
-    highlightMatrixNode(activeNodeId);
-
-
-    // --- Highlighting logic (mostly unchanged) ---
-    d3.selectAll(".adjacent_edges").remove(); // Clear previous edges
-    
-    // Show edges for the current hovered node
-    adjacent_nodes.forEach(neighborId => {
-        const neighborNode = global_data.find(n => n.node === neighborId);
-        if (!neighborNode) return; // Skip if neighbor isn't in current slice
-
-        let edge = node_to_node_link_data.find(e => 
-            (e.source === activeNodeId && e.target === neighborId) || 
-            (e.target === activeNodeId && e.source === neighborId)
-        );
-        if (!edge) return;
-
-        g.append('line')
-            .attr("class", "adjacent_edges non-scaling-stroke")
-            .style("stroke", getEdgeColorByType(edge.type))
-            .style("stroke-opacity", .5)
-            .style("stroke-width", 1.5)
-            .attr("x1", d.x)
-            .attr("y1", d.y)
-            .attr("x2", neighborNode.x)
-            .attr("y2", neighborNode.y)
-            .lower(); // Draw lines underneath the nodes
-    });
-    
-    // Opacity fade for other communities
-    d3.selectAll("circle.happy")
-        .attr("opacity", n => (n.community === activeCommunityId) ? 1 : 0.1);
-})
-.on("mouseout", function(event, d) {
-    // Hide the tooltip
-    div.transition()
-        .duration(300)
-        .style("opacity", 0);
-
-    // Remove the temporary edges drawn on hover
-    d3.selectAll(".adjacent_edges").remove();
-
-    // Reset the opacity for all nodes
-    d3.selectAll("circle.happy")
-        .attr("opacity", 1);
-
-    // Reset any highlights on the side-panel charts
-    d3.selectAll(".sideCommEllipse")
-        .style("stroke", "#333")
-        .style("stroke-width", 1);
-})
-                  .on("click", function(event, d) {
-                    // Prevent propagation if needed
-                    event.stopPropagation();
-
-                    // Identify the timeslice (yearRange) in which the user clicked.
-                    let clickedYearRange = window.currentYearRange || "UnknownYear";
-                    let commID = d.community; 
-
-                    // Check if this community from the current timeslice is already selected.
-                    let alreadySelected = selectedCommunitySpirals.find(s => 
-                      s.communityID === commID && s.yearRange === clickedYearRange
-                    );
-                    if (alreadySelected) {
-                      return;
-                    }
-
-                    // Build the *original* community’s data from this timeslice
-                    // and freeze the colour each node has *right now*.
-                    let originalCommData = global_data
-                      .filter(n => n.community === commID)
-                      .map(n => ({
-                        ...n,
-                        frozenColor: getColorBasedOnFlags(n)
-                      }));
-
-                    let originalCommLinks = node_to_node_link_data.filter(e => {
-                      let nodeIDs = new Set(originalCommData.map(n => n.node));
-                      return nodeIDs.has(e.source) && nodeIDs.has(e.target);
-                    });
-
-                    // Create an object representing this selection.
-                    let selectionObj = {
-                      yearRange: clickedYearRange,
-                      communityID: commID,
-                      originalNodeData: originalCommData,
-                      originalLinkData: originalCommLinks,
-                      randomColorActive: false
-                    };
-
-                    // If we already have 3 selected, remove the oldest.
-                    if (selectedCommunitySpirals.length >= 3) {
-                      selectedCommunitySpirals.shift();
-                    }
-                    selectedCommunitySpirals.push(selectionObj);
-
-                    // Define the highlight colors for each selection.
-                    const highlightColors = ["gold", "magenta", "green"];
-                    
-                    // Build a mapping from node ID to its highlight color.
-                    let highlightNodesMap = {};
-                    selectedCommunitySpirals.forEach((sel, index) => {
-                      let color = highlightColors[index] || "gold";
-                      sel.originalNodeData.forEach(nodeObj => {
-                        // If a node belongs to more than one selected community,
-                        // assign it the color of the earliest selection.
-                        if (!(nodeObj.node in highlightNodesMap)) {
-                          highlightNodesMap[nodeObj.node] = color;
-                        }
-                      });
-                    });
-                    // Store the mapping globally.
-                    globalHighlightNodesMap = highlightNodesMap;
-
-                    // Update the main view so that every node gets its assigned color.
-                    d3.selectAll("circle")
-                      .style("stroke", function(n) {
-                        return globalHighlightNodesMap[n.node] || "none";
+                    /* Restore only the ellipse this hover highlighted, to the
+                       value the card computed for it — NOT to null. Nulling
+                       removes the inline property, and since nothing in css/ or
+                       index.html styles .sideCommEllipse it then falls back to
+                       the SVG initial `stroke: none` and the ring disappears
+                       outright. That silently stripped the ego's heavy black
+                       border — the only mark saying whose network a card is —
+                       after one hover of that node on the main chart, and now
+                       that focus is drawn as a ring too it stripped those as
+                       well, leaving a focused member indistinguishable from an
+                       unfocused one while still claiming stroke-opacity 0.95.
+                       The card's own mouseout gets this right by calling
+                       strokeFor(d); those live in the card's closure and cannot
+                       be reached from here, so the intended values are stashed
+                       on the element at render time and read back. */
+                    d3.selectAll(".sideCommEllipse")
+                      .filter(n => n && n.node === d.node)
+                      .style("stroke", function () {
+                        return this.getAttribute("data-stroke") || "#333";
                       })
-                      .style("stroke-width", function(n) {
-                        return globalHighlightNodesMap[n.node] ? 5 : 0;
+                      .style("stroke-width", function () {
+                        return this.getAttribute("data-stroke-width") || 1;
                       });
 
-                    // Now update the side widget with the persistent community spirals.
-                    updateCommunitySpiralSideWidget();
+                  })
+                  /* Cohort snapshot. Bound through a pointer pair rather than
+                     "click": d3-zoom suppresses the native click after ANY
+                     pointer movement between down and up, which made selecting
+                     a small node feel unreliable even once the exception below
+                     was fixed. A 3px tolerance treats a nudge as a click. */
+                  .on("pointerdown", function(event){
+                    _cohortClickDown = [event.clientX, event.clientY];
+                  })
+                  .on("pointerup", function(event, d){
+                    const down = _cohortClickDown; _cohortClickDown = null;
+                    if (!down) return;
+                    if (Math.hypot(event.clientX - down[0], event.clientY - down[1]) > 3) return;
+                    event.stopPropagation();
+                    snapshotCommunityCohort(d);
                   });
                   
 
@@ -1341,129 +1790,12 @@ if (false) { // set to true only if you really want both brush and zoom
 
   g.selectAll(".axis").remove();
   g.selectAll(".text_for_legend").remove();
-  var legendheight = 200,
-      legendwidth = 80,
-      margin = {top: 10, right: 60, bottom: 10, left: 2};
 
-  var canvas = d3.select("#legend1")
-    .style("height", legendheight + "px")
-    .style("width", legendwidth + "px")
-    .style("position", "relative")
-    .append("canvas")
-    .attr("height", legendheight - margin.top - margin.bottom)
-    .attr("width", 1)
-    .style("height", (legendheight - margin.top - margin.bottom) + "px")
-    .style("width", (legendwidth - margin.left - margin.right) + "px")
-    .style("border", "1px solid #000")
-    .style("position", "absolute")
-    .style("top",  (margin.top) +"px")
-    .style("left", (margin.left) + "px")
-    .node();
+  // Unified legend that always reflects the active colour encoding.
+  renderSpiralLegend();
 
-  var ctx = canvas.getContext("2d");
-
-  let domain_used_for_legend;
-  if (densityColFlag ==1)
-    domain_used_for_legend= colorscaleDensity.domain();
-  else if (degreeColFlag==1)
-    domain_used_for_legend=  colorscaleDegree.domain();
-  else if (closenessColFlag==1)
-    domain_used_for_legend=  colorscaleCloseness.domain();
-  else if (betweennessColFlag==1)
-    domain_used_for_legend =  colorscaleBetwness.domain();
-  else if (eignColFlag==1)
-    domain_used_for_legend= colorscaleEign.domain();
-  else if (volatilityColFlag==1)
-    domain_used_for_legend= colorscaleVolatility.domain();
-  else {
-    // If localVolatilityColFlag == 1, the "legend" is not numeric-based,
-    // so you can skip or just give a dummy domain
-    if (localVolatilityColFlag == 1) {
-      domain_used_for_legend = [0,1];
-    }
-  }
-
-  var legendscale = d3.scaleLinear()
-    .range([1, legendheight - margin.top - margin.bottom])
-    .domain(domain_used_for_legend || [0,1]);
-
-  var image = ctx.createImageData(1, legendheight);
-  d3.range(legendheight).forEach(function(i) {
-    let c;
-    if (densityColFlag ==1) c = d3.rgb(colorscaleDensity(legendscale.invert(i)));
-    else if (degreeColFlag==1) c = d3.rgb(colorscaleDegree(legendscale.invert(i)));
-    else if (closenessColFlag==1) c = d3.rgb(colorscaleCloseness(legendscale.invert(i)));
-    else if (betweennessColFlag==1) c = d3.rgb(colorscaleBetwness(legendscale.invert(i)));
-    else if (eignColFlag==1) c = d3.rgb(colorscaleEign(legendscale.invert(i)));
-    else if (volatilityColFlag==1) c = d3.rgb(colorscaleVolatility(legendscale.invert(i)));
-    else {
-      // fallback
-      c = d3.rgb("#ccc");
-    }
-    image.data[4*i] = c.r;
-    image.data[4*i + 1] = c.g;
-    image.data[4*i + 2] = c.b;
-    image.data[4*i + 3] = 255;
-  });
-  ctx.putImageData(image, 0, 0);
-
-  var legendaxis = d3.axisRight()
-    .scale(legendscale)
-    .tickSize(6)
-    .ticks(8);
-
-  d3.select("#legend1")
-    .attr("height", 0+"px")//(legendheight) + "px")
-    .attr("width", 0+"px")//(legendwidth) + "px")
-    .style("position", "absolute")
-    .style("left", "15px")
-    .style("top", margin.top );
-
-  // g.append("g")
-  //  .attr("class", "axis")
-  //  .attr("transform", "translate(" + (legendwidth - margin.left - margin.right + 3) + "," + (margin.top) + ")")
-  //  .call(legendaxis);
-//   const hud = window.SpinTrixMainZoom?.getHud?.();
-
-//   if (hud) {
-//   // Clear old HUD legend bits
-//   hud.selectAll(".legendAxis,.legendLabel").remove();
-
-//   // Axis in the HUD (fixed position in SVG pixels)
-//   hud.append("g")
-//      .attr("class", "legendAxis")
-//      .attr("transform", `translate(${legendwidth + 20}, ${margin.top})`)
-//      .call(legendaxis);
-
-//   // Label in the HUD
-//   hud.append("text")
-//      .attr("class", "legendLabel")
-//      .attr("x", legendwidth + 20)
-//      .attr("y", legendheight + margin.top + 14)
-//      .attr("opacity", 0.7)
-//      .text(text_for_legend || "");
-// }
-
-
-  let text_for_legend;
-  if (densityColFlag ==1) text_for_legend = "Density";
-  else if (degreeColFlag==1) text_for_legend =   "   Degree";
-  else if (closenessColFlag==1) text_for_legend=  "   Closeness";
-  else if (betweennessColFlag==1) text_for_legend =  "Betweeness";
-  else if (eignColFlag==1) text_for_legend = "Eigen";
-  else if (volatilityColFlag==1) text_for_legend = "    Volatility";
-  else if (localVolatilityColFlag==1) text_for_legend = "    Local Volatility";
-
-// if (hud) {
-//   hud.selectAll(".text_for_legend").remove();
-//   hud.append("text")
-//     .attr("class", "text_for_legend")
-//     .text(text_for_legend || "")
-//     .attr("opacity", 0.6)
-//     .attr("x", 12)
-//     .attr("y", 16); // stays the same on screen
-// }
-
+  // Community labels + growth/shrink indicators (top-K by size).
+  renderCommunityLabels();
 
    // Initialize main canvas zoom/pan once, then keep using it
 // Ensure newly drawn layers zoom correctly, then init/refresh zoom + first fit
@@ -1483,6 +1815,226 @@ if (window.SpinTrixMainZoom) {
 
 
 }
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Unified spiral legend.
+   Renders into #spiralLegend and always matches the active colour encoding:
+   • Local Volatility  → four discrete, labelled categorical swatches.
+   • Continuous scales → a gradient ramp with min/max readouts + the name.
+   ───────────────────────────────────────────────────────────────────────── */
+function renderSpiralLegend() {
+  const host = d3.select("#spiralLegend");
+  if (host.empty()) return;
+
+  const SC = window.STATE_COLORS || {
+    incoming: "#0072B2", outgoing: "#E69F00", both: "#CC79A7", stable: "#8C8C8C"
+  };
+
+  // ── Categorical: temporal state (Local Volatility) ──────────────────────
+  if (localVolatilityColFlag == 1) {
+    // Swatch colour and default wording per state. At the first/last slice the
+    // ±1 window is one-sided, so LocalVolatility narrows this to the states the
+    // slice can actually produce and relabels them — the legend must never
+    // advertise a category the data cannot contain.
+    const SWATCH = {
+      incoming: { col: SC.incoming, id: "incoming-legend-info",
+                  tip: "<b>Incoming:</b> New arrival; did not exist in previous slice." },
+      outgoing: { col: SC.outgoing, id: "outgoing-legend-info",
+                  tip: "<b>Outgoing:</b> Exists in current slice, disappears in next." },
+      stable:   { col: SC.stable,   id: "stable-legend-info",
+                  tip: "<b>Stable:</b> Persistent core; exists in T-1, T, and T+1." },
+      outandin: { col: SC.both,     id: "transient-legend-info",
+                  tip: "<b>Transient:</b> Appears and disappears within a single slice." }
+    };
+
+    const LV = window.LocalVolatility;
+    const i  = (window.currentSlices || []).indexOf(window.currentYearRange);
+    const n  = (window.currentSlices || []).length;
+    const states = LV ? LV.statesFor(i, n)
+                      : ["incoming", "outgoing", "stable", "outandin"];
+    const note = LV ? LV.censorNote(i, n) : "";
+
+    const items = states.map(s => {
+      const sw = SWATCH[s];
+      if (!sw) return "";
+      const label = LV ? LV.labelFor(s, i, n) : s;
+      return `
+      <div class="legend-item">
+        <span class="color-box" style="background:${sw.col}"></span><span>${label}</span>
+        <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text" id="${sw.id}">${sw.tip}</span></span>
+      </div>`;
+    }).join("");
+
+    const noteHtml = note ? `
+      <div class="legend-item legend-item--note" title="${note}">
+        <span class="legend-censor-mark" aria-hidden="true"></span>
+        <span class="legend-censor-text">Edge of data</span>
+        <span class="info-tooltip"><span class="info-icon">i</span><span class="info-text">${note}</span></span>
+      </div>` : "";
+
+    host.classed("legend", true).html(items + noteHtml);
+    // Re-apply slice-aware wording (spans were just recreated).
+    if (typeof window.refreshLegendTooltips === "function") window.refreshLegendTooltips();
+    return;
+  }
+
+  // ── Continuous encodings: gradient ramp ─────────────────────────────────
+  let scale, name;
+  if (densityColFlag == 1)          { scale = colorscaleDensity;    name = "Density"; }
+  else if (degreeColFlag == 1)      { scale = colorscaleDegree;     name = "Degree"; }
+  else if (closenessColFlag == 1)   { scale = colorscaleCloseness;  name = "Closeness"; }
+  else if (betweennessColFlag == 1) { scale = colorscaleBetwness;   name = "Betweenness"; }
+  else if (eignColFlag == 1)        { scale = colorscaleEign;       name = "Eigenvector"; }
+  else if (volatilityColFlag == 1)  { scale = colorscaleVolatility; name = "Volatility"; }
+  else { host.html(""); return; }
+
+  if (!scale || typeof scale.domain !== "function") { host.html(""); return; }
+  const domain = scale.domain();
+  const lo = domain[0];
+  const hi = domain[domain.length - 1];
+
+  const N = 16;
+  const stops = [];
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    const v = lo + t * (hi - lo);
+    const col = d3.color(scale(v));
+    stops.push(`${col ? col.formatRgb() : "#ccc"} ${Math.round(t * 100)}%`);
+  }
+
+  const fmt = v => (Number.isInteger(v) || Math.abs(v) >= 100) ? Math.round(v) : (+v).toFixed(2);
+
+  host.classed("legend", true).html(`
+    <div class="legend-continuous">
+      <span class="legend-name">${name}</span>
+      <span class="legend-min">${fmt(lo)}</span>
+      <span class="legend-ramp" style="background:linear-gradient(to right, ${stops.join(",")})"></span>
+      <span class="legend-max">${fmt(hi)}</span>
+    </div>
+  `);
+}
+window.renderSpiralLegend = renderSpiralLegend;
+
+/* ─────────────────────────────────────────────────────────────────────────
+   Community labels + growth/shrink indicators.
+   The top-K communities (by member count) get a text label at their spiral
+   centre: the seed anchor name when the dataset provides one, else the
+   highest-degree member's name, else "C<id>". When a previous slice is in
+   the cross-slice cache, the label carries a size delta (▲n / ▼n) computed
+   against the community's member-overlap predecessor — the previous-slice
+   community that contributed the plurality of its current members — so the
+   indicator stays meaningful even when community ids are not stable across
+   slices. "✦ new" marks communities with no members present at t−1.
+   Labels are pointer-transparent so node hover underneath keeps working.
+   ───────────────────────────────────────────────────────────────────────── */
+function renderCommunityLabels(){
+  if (window.PresencePartition && window.PresencePartition.active) return;
+  g.selectAll(".community-label").remove();
+  if (window.showCommunityLabels === false) return;
+  if (typeof center_positions_spiral === "undefined" || !center_positions_spiral) return;
+  if (!global_data || !global_data.length) return;
+
+  const TOP_K = 12;
+  const byComm = d3.group(global_data, d => d.community);
+  const ranked = Array.from(byComm, ([comm, rows]) => ({ comm, rows, size: rows.length }))
+                      .sort((a, b) => b.size - a.size)
+                      .slice(0, TOP_K);
+
+  // center_positions_spiral is an ARRAY of {community, size, cx, cy} —
+  // build an id-keyed lookup rather than indexing by community id.
+  const centerByComm = {};
+  (Array.isArray(center_positions_spiral) ? center_positions_spiral
+      : Object.values(center_positions_spiral)).forEach(c => {
+    if (c && c.community !== undefined) centerByComm[+c.community] = c;
+  });
+
+  // Previous slice's node → community dict (for the growth indicator).
+  const slices = window.currentSlices || [];
+  const tIdx = slices.indexOf(window.currentYearRange);
+  const prevDict = (tIdx > 0 && typeof allYearsNodeData !== "undefined")
+      ? allYearsNodeData[slices[tIdx - 1]] : null;
+  let prevSizes = null;
+  if (prevDict){
+    prevSizes = {};
+    Object.values(prevDict).forEach(n => {
+      prevSizes[n.community] = (prevSizes[n.community] || 0) + 1;
+    });
+  }
+
+  const bad = v => (v === undefined || v === null || v === "" ||
+                    v === "None" || v === "undefined" || v === "NaN");
+
+  ranked.forEach(({ comm, rows, size }) => {
+    const cp = centerByComm[+comm];
+    if (!cp) return;
+
+    let lbl = null;
+    const anchorRow = rows.find(r => !bad(r.anchor_name));
+    if (anchorRow) lbl = String(anchorRow.anchor_name);
+    if (!lbl){
+      // Ground-truth datasets name nodes "<group>#<id>"; when most members
+      // share the same "<group>#" prefix, the group name IS the community.
+      const prefixes = {};
+      let named = 0;
+      rows.forEach(r => {
+        if (bad(r.name)) return;
+        named++;
+        const s = String(r.name);
+        const h = s.indexOf("#");
+        if (h > 0) prefixes[s.slice(0, h)] = (prefixes[s.slice(0, h)] || 0) + 1;
+      });
+      const best = Object.entries(prefixes).sort((a, b) => b[1] - a[1])[0];
+      if (best && named && best[1] >= 0.8 * named) lbl = best[0];
+    }
+    if (!lbl){
+      const top = rows.reduce((a, b) => (+b.centrality > +a.centrality ? b : a), rows[0]);
+      if (top && !bad(top.name)) lbl = String(top.name);
+    }
+    if (!lbl) lbl = "C" + comm;
+    if (lbl.length > 30) lbl = lbl.slice(0, 29) + "…";
+
+    let delta = "";
+    if (prevDict){
+      const votes = {};
+      let present = 0;
+      rows.forEach(r => {
+        const p = prevDict[r.node];
+        if (p && p.community !== undefined && !Number.isNaN(p.community)){
+          votes[p.community] = (votes[p.community] || 0) + 1;
+          present++;
+        }
+      });
+      if (!present){
+        delta = " ✦ new";
+      } else {
+        const pred = Object.entries(votes).sort((a, b) => b[1] - a[1])[0][0];
+        const d = size - (prevSizes[pred] || 0);
+        if (d > 0)      delta = " ▲" + d;
+        else if (d < 0) delta = " ▼" + Math.abs(d);
+      }
+    }
+
+    g.append("text")
+      .attr("class", "community-label")
+      /* Carries its community so a hover can mute this one label without
+         touching the others. The label sits at the glyph's CENTRE, which is
+         exactly where the dots you are inspecting are, so leaving it up means
+         reading a name printed across the thing it names. */
+      .attr("data-community", comm)
+      .attr("x", cp.cx)
+      .attr("y", cp.cy)
+      .attr("text-anchor", "middle")
+      .text(lbl + delta);
+  });
+}
+window.renderCommunityLabels = renderCommunityLabels;
+
+window.toggleCommunityLabels = function(){
+  window.showCommunityLabels = (window.showCommunityLabels === false);
+  const btn = document.getElementById("labelToggle");
+  if (btn) btn.classList.toggle("active", window.showCommunityLabels !== false);
+  renderCommunityLabels();
+};
 
 function drawNodeTimesliceChart(nodeID){
   /* ─────────────────────────────────────────
@@ -1533,9 +2085,17 @@ function drawNodeTimesliceChart(nodeID){
         W=300-M.left-M.right,
         H=200-M.top-M.bottom;
 
+  // Responsive: the SVG scales to the card via viewBox, and a small root
+  // font-size keeps axis/label text proportional (was inheriting the 16px
+  // document default, which made the labels huge).
   const svg = d3.select("#nodeTimesliceChart").append("svg")
-      .attr("width",W+M.left+M.right)
-      .attr("height",H+M.top+M.bottom)
+      .attr("viewBox",`0 0 ${W+M.left+M.right} ${H+M.top+M.bottom}`)
+      .attr("preserveAspectRatio","xMidYMid meet")
+      .style("width","100%")
+      .style("height","auto")
+      .style("max-width",(W+M.left+M.right)+"px")
+      .style("font-family","Inter, sans-serif")
+      .style("font-size","10px")
     .append("g").attr("transform",`translate(${M.left},${M.top})`);
 
   const sub=["incoming","outgoing","outandin","none"];
@@ -1545,7 +2105,7 @@ function drawNodeTimesliceChart(nodeID){
             .domain([0,d3.max(stackedData,d=>d.incoming+d.outgoing+d.outandin+d.none)])
             .range([H,0]);
   const col=d3.scaleOrdinal().domain(sub)
-              .range(["#0571b0","#f4a582","#ca0020","#92c5de"]);
+              .range(["#0072B2","#E69F00","#CC79A7","#8C8C8C"]);
 
   const series=d3.stack().keys(sub)(stackedData);
 
@@ -1559,14 +2119,19 @@ function drawNodeTimesliceChart(nodeID){
           .attr("height",d=>y(d[0])-y(d[1]))
           .attr("width",x.bandwidth());
 
-  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x));
+  // Label only the first & last slice — a "1 … n" flow — so many-slice datasets
+  // don't produce an overlapping wall of x-axis labels.
+  const _endTicks = stackedData.length
+    ? [stackedData[0].year, stackedData[stackedData.length - 1].year].filter((v, i, a) => a.indexOf(v) === i)
+    : [];
+  svg.append("g").attr("transform",`translate(0,${H})`).call(d3.axisBottom(x).tickValues(_endTicks));
   svg.append("g").call(d3.axisLeft(y).ticks(5).tickFormat(d3.format("d")));
 
   svg.append("text").attr("x",W/2).attr("y",H+M.bottom-5)
-     .attr("text-anchor","middle").text("Timeslices");
+     .attr("text-anchor","middle").attr("font-size","11px").attr("fill","#4b4b50").text("Timeslices");
   svg.append("text").attr("transform","rotate(-90)")
      .attr("x",-H/2).attr("y",-M.left+15)
-     .attr("text-anchor","middle").text("No. of Edges");
+     .attr("text-anchor","middle").attr("font-size","11px").attr("fill","#4b4b50").text("No. of Edges");
 
   /* ─────────────────────────────────────────
      3 ▸ ellipse + white number inside
@@ -1576,13 +2141,27 @@ function drawNodeTimesliceChart(nodeID){
         .attr("class","nodeTypeEllipse")
         .attr("cx",d=>x(d.year)+x.bandwidth()/2)
         .attr("cy",d=> y(d.incoming+d.outgoing+d.outandin+d.none) - 10)
-        .attr("rx",8).attr("ry",5)
+        .attr("rx",d=> d.year===window.currentYearRange ? 10 : 8)
+        .attr("ry",d=> d.year===window.currentYearRange ? 6.5 : 5)
         .attr("fill",d=>{
-          if(d.nodeType==="incoming")  return "#0571b0";
-          if(d.nodeType==="outgoing")  return "#f4a582";
-          if(d.nodeType==="outandin")  return "#ca0020";
-          return "#92c5de";
-        });
+          if(d.nodeType==="incoming")  return "#0072B2";
+          if(d.nodeType==="outgoing")  return "#E69F00";
+          if(d.nodeType==="outandin")  return "#CC79A7";
+          return "#8C8C8C";
+        })
+        // "You are here" ring on the current slice's oval.
+        .attr("stroke",d=> d.year===window.currentYearRange ? "#1d1d1f" : "#fff")
+        .attr("stroke-width",d=> d.year===window.currentYearRange ? 2 : 0.5);
+
+  // Caret above the current slice's oval, reinforcing "you are here".
+  const _cur = stackedData.find(d=>d.year===window.currentYearRange);
+  if(_cur){
+    const _cx = x(_cur.year)+x.bandwidth()/2;
+    const _cy = y(_cur.incoming+_cur.outgoing+_cur.outandin+_cur.none) - 10;
+    svg.append("text").attr("x",_cx).attr("y",_cy-11)
+       .attr("text-anchor","middle").attr("font-size","11px").attr("fill","#1d1d1f")
+       .attr("font-weight","700").text("▾");
+  }
 
   svg.selectAll(".communityCountText")
       .data(stackedData).enter().append("text")
@@ -1608,10 +2187,10 @@ function drawNodeTimesliceChart(nodeID){
 //   .attr("rx", 8) // Horizontal radius of the ellipse
 //   .attr("ry", 5) // Vertical radius of the ellipse
 //   .attr("fill", d => {
-//     if (d.type === "outgoing") return "#f4a582";
-//     else if (d.type === "incoming") return "#0571b0";
-//     else if (d.type === "outandin") return "#ca0020";
-//     else return "#92c5de"; // Default color for "none"
+//     if (d.type === "outgoing") return "#E69F00";
+//     else if (d.type === "incoming") return "#0072B2";
+//     else if (d.type === "outandin") return "#CC79A7";
+//     else return "#8C8C8C"; // Default color for "none"
 //   });
 
 
@@ -1675,12 +2254,36 @@ function drawCommunityAdjMatrix(new_data1, node_to_node_link_data) {
                         <span>Total Edges: ${totalEdges}</span> <br>
                         <span>Incoming: ${incomingCount}</span> <br>
                         <span>Outgoing: ${outgoingCount}</span> <br>
-                        <span>Both: ${outandinCount}</span> <br>
+                        <span>Transient: ${outandinCount}</span> <br>
                         <span>Stable: ${noneCount}</span>
                       </div>
                     `);
 
-  // 6) Basic geometry
+  // 5b) Summarize very large communities: cap to the top-K nodes by
+  //     intra-community degree so the matrix stays legible and the DOM bounded
+  //     (fit + summarize). The info box keeps the true totals.
+  const MATRIX_MAX_NODES = 80;
+  let hiddenNodeCount = 0;
+  if (new_data1.length > MATRIX_MAX_NODES) {
+    hiddenNodeCount = new_data1.length - MATRIX_MAX_NODES;
+    new_data1 = new_data1
+      .slice()
+      .sort((a, b) => (adjacency[b.node] || []).length - (adjacency[a.node] || []).length)
+      .slice(0, MATRIX_MAX_NODES)
+      .sort((a, b) => d3.ascending(a.node, b.node));
+    d3.select("#communityMatrixLegend").append("div")
+      .style("margin-top", "6px")
+      .style("font-style", "italic")
+      .style("color", "#86868b")
+      .html(`Showing top ${MATRIX_MAX_NODES} by degree · +${hiddenNodeCount} more`);
+  }
+
+  // 6) Basic geometry.
+  //    The SVG uses a viewBox of the FULL grid and scales responsively to its
+  //    container (width:100%, height:auto via CSS), so the whole matrix is
+  //    always visible without scrollbars — however large the community is.
+  //    max-width is capped at the natural pixel size so tiny matrices don't
+  //    balloon to blurry proportions.
   let size = new_data1.length;
   let cellSize = 5;
   let margin = 4;
@@ -1688,14 +2291,18 @@ function drawCommunityAdjMatrix(new_data1, node_to_node_link_data) {
 
   let svg = d3.select("#communityMatrix")
               .append("svg")
-              .attr("width", totalSize)
-              .attr("height", totalSize);
+              .attr("viewBox", `0 0 ${totalSize} ${totalSize}`)
+              .attr("preserveAspectRatio", "xMidYMid meet")
+              .style("width", "100%")
+              .style("height", "auto")
+              .style("max-width", totalSize + "px")
+              .style("max-height", "100%");
 
   // 7) Our color function for the edge type
   function colorByEdgeType(type) {
-    if (type === "incoming")  return "#0571b0"; // e.g. blue
-    else if (type === "outgoing")  return "#f4a582"; // e.g. orange
-    else if (type === "outandin")  return "#ca0020"; // e.g. red
+    if (type === "incoming")  return "#0072B2"; // e.g. blue
+    else if (type === "outgoing")  return "#E69F00"; // e.g. orange
+    else if (type === "outandin")  return "#CC79A7"; // e.g. red
     else return "white"; // fallback color
   }
 
@@ -1893,10 +2500,10 @@ function getRandomColorForTimesliceCommunity(timeslice, commID) {
  * Consistent colour for an edge or node type, shared by main view and side widgets
  */
  function getEdgeColorByType(t){
-   if (t === "incoming")  return "#0571b0";   // blue
-   if (t === "outgoing")  return "#f4a582";   // orange
-   if (t === "outandin")  return "#ca0020";   // red
-   return "#92c5de";                          // “neither” / undefined
+   if (t === "incoming")  return "#0072B2";   // blue
+   if (t === "outgoing")  return "#E69F00";   // orange
+   if (t === "outandin")  return "#CC79A7";   // red
+   return "#8C8C8C";                          // “neither” / undefined
 }
 
 
@@ -1944,9 +2551,18 @@ function getFitTransform (xMin, xMax, yMin, yMax, w, h, pad = 10) {
 ─────────────────────────────────────────────────────────────────────────────*/
 function updateCommunitySpiralSideWidget() {
 
-  /* 1 ▸ nothing selected → wipe and bail out */
+  /* The panel is sized by how many cards it holds — one card in a 730px box is
+     mostly whitespace, three need the room to sit side by side. CSS keys off
+     this attribute rather than guessing. */
+  const _cohortFloat = document.getElementById("cohortFloat");
+  if (_cohortFloat)
+    _cohortFloat.setAttribute("data-cards", String(selectedCommunitySpirals.length));
+
+  /* 1 ▸ nothing selected → wipe, collapse + dock back into the column, bail out */
   if (selectedCommunitySpirals.length === 0) {
     d3.select("#communitySideContainer").html("");
+    if (_cohortFloat) _cohortFloat.classList.add("collapsed");
+    document.body.classList.remove("cohorts-active");
     return;
   }
 
@@ -1970,13 +2586,49 @@ function updateCommunitySpiralSideWidget() {
     const headerRow = sideDiv.append("div")
       .style("display", "flex")
       .style("justify-content", "space-between")
-      .style("align-items", "center");
+      .style("align-items", "center")
+      .style("flex-wrap", "wrap")
+      .style("gap", "4px 6px");
 
+    /* Titles can now be a person's name plus a qualifier, not just
+       "Community 7". The row also carries Unselect and three zoom buttons, so
+       in a 320px card the title gets its own line (flex-basis 100%) and the
+       controls wrap beneath it. Without min-width:0 it would refuse to shrink
+       and the buttons would land on top of the text. */
+    const headerText = `${selObj.label || ("Community " + selObj.communityID)} · ${selObj.yearRange}`;
     headerRow.append("span")
-      .html(`<b>Community ${selObj.communityID} from ${selObj.yearRange}</b>`);
+      .style("flex", "1 1 100%")
+      .style("min-width", "0")
+      .style("overflow", "hidden")
+      .style("text-overflow", "ellipsis")
+      .style("white-space", "nowrap")
+      .attr("title", headerText)
+      .html(`<b>${headerText}</b>`);
+
+    /* The focus is emphasis WITHIN this card, so it belongs on its own line
+       under the title with an explicit way out — otherwise a dimmed card looks
+       broken rather than filtered. */
+    if (selObj.focus && selObj.focus.label) {
+      const fRow = headerRow.append("span")
+        .style("flex", "1 1 100%")
+        .style("display", "flex")
+        .style("align-items", "center")
+        .style("gap", "6px")
+        .style("font-size", "0.7rem")
+        .style("color", "#555");
+      fRow.append("span")
+        .style("overflow", "hidden").style("text-overflow", "ellipsis")
+        .style("white-space", "nowrap")
+        .text("Focus: " + selObj.focus.label);
+      fRow.append("button")
+        .style("flex", "0 0 auto")
+        .text("Clear")
+        .on("click", () => { selObj.focus = null; updateCommunitySpiralSideWidget(); });
+    }
 
     /* remove-selection btn */
     headerRow.append("button")
+      .style("flex", "0 0 auto")
       .text("Unselect")
       .on("click", () => {
         selectedCommunitySpirals.splice(index, 1); // drop it
@@ -1998,9 +2650,14 @@ function updateCommunitySpiralSideWidget() {
     /* ───── b) svg canvas ──────────────────────────────────────────────── */
     const SVG_W = 300,
       SVG_H = 300;
+    // viewBox (not fixed width/height) so each snapshot scales to the floaty
+    // card. The inner gRoot is still fitted against SVG_W/SVG_H below.
     const svg = sideDiv.append("svg")
-      .attr("width", SVG_W)
-      .attr("height", SVG_H);
+      .attr("viewBox", `0 0 ${SVG_W} ${SVG_H}`)
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("width", "100%")
+      .style("height", "auto")
+      .style("display", "block");
 
     /* gRoot will be zoomed/panned as a single unit */
     const gRoot = svg.append("g");
@@ -2029,12 +2686,60 @@ function updateCommunitySpiralSideWidget() {
       aroundStep = coils / sides,
       aroundRad = aroundStep * 2 * Math.PI;
 
-    nodesOriginal.forEach((d, i) => {
+    /* An ego-network cohort is only comparable against another one if you can
+       see whose network it is, so the ego takes the centre. The spiral starts
+       at i + 30 — roughly 53px out — so the centre is empty anyway and the
+       neighbours keep the exact positions they would have had without it. */
+    const isEgo = d => selObj.egoID != null && d.node === selObj.egoID;
+    let spiralIdx = 0;
+    nodesOriginal.forEach(d => {
+      if (isEgo(d)) { d.new_x = centreX; d.new_y = centreY; return; }
+      const i = spiralIdx++;
       const away = (i + 30) * awayStep;
       const around = (i + 30) * aroundRad + rotation;
       d.new_x = centreX + Math.cos(around) * away;
       d.new_y = centreY + Math.sin(around) * away;
     });
+
+    /* .sideCommEllipse is a global selector shared by all three cards, and the
+       hover/mouseout handlers below repaint stroke unconditionally — so the
+       ego's border has to be derived from the datum every time it is set,
+       never hardcoded, or the first mouseout strips it. */
+    /* Two independent reasons to fade. They used to be an if/else, so the first
+       one answered and the second never ran: an unfocused member and an absent
+       member both came out at a flat 0.15, and a focused member who was NOT in
+       this slice was drawn at full strength — the card asserting someone was
+       present who was not. They COMPOSE now, one multiplying the other, so the
+       four combinations are four opacities and each still means one thing:
+
+         here + focused      1.00      here + unfocused      0.45
+         gone + focused      0.25      gone + unfocused      0.11
+
+       The floor also had to come up. At 0.15 a focus turned the rest of the
+       neighbourhood off rather than down, and the rest of the neighbourhood is
+       the context that makes a focus mean anything. The ego is never faded by
+       focus — it is the card's identity — but it IS faded by absence. */
+    const focusIds = selObj.focus && selObj.focus.ids
+      ? new Set([...selObj.focus.ids].map(Number)) : null;
+    const inFocus = d => !focusIds || isEgo(d) || focusIds.has(d.node);
+    const opacityFor = d => {
+      const here = currentNodeMap.has(d.node) ? 1 : 0.25;
+      return inFocus(d) ? here : here * 0.45;
+    };
+    /* The ring stays legible for whatever the focus is, present or not — that
+       is the point of clicking a band whose members mostly left. Everything
+       else keeps a ring proportional to how visible its fill is, so unfocused
+       nodes do not acquire an outline they never had. */
+    const strokeOpacityFor = d =>
+      (focusIds && inFocus(d)) ? 0.95 : opacityFor(d);
+
+    /* Focus also gets a border, so it does not rest on opacity alone — opacity
+       is spoken for by presence, and one channel cannot carry two variables. */
+    const strokeFor = d =>
+      isEgo(d) ? "#000" : (focusIds && inFocus(d) ? "#1d1d1f" : "#333");
+    const strokeWidthFor = d =>
+      isEgo(d) ? 3 : (focusIds && inFocus(d) ? 2 : 1);
+    const radiusFor = d => isEgo(d) ? 6 : 4;
 
     /* ───── d) edge layers (current & original) ────────────────────────── */
     const edgesG = gRoot.append("g");
@@ -2071,9 +2776,20 @@ function updateCommunitySpiralSideWidget() {
       .attr("class", "sideCommEllipse")
       .attr("cx", d => d.new_x)
       .attr("cy", d => d.new_y)
-      .attr("rx", 4).attr("ry", 4)
-      .style("stroke", "#333").style("stroke-width", 1)
-      .style("opacity", d => currentNodeMap.has(d.node) ? 1 : 0.25)
+      .attr("rx", radiusFor).attr("ry", radiusFor)
+      .style("stroke", strokeFor).style("stroke-width", strokeWidthFor)
+      /* The same two values as attributes, so a handler outside this closure
+         can restore them. The main-chart mouseout is the one that needs it. */
+      .attr("data-stroke", strokeFor).attr("data-stroke-width", strokeWidthFor)
+      /* fill-opacity, NOT opacity: `opacity` fades the whole element, ring
+         included, so a focused member who is not in this slice had its focus
+         ring faded to 0.25 along with everything else — three of the four
+         members of a clicked band were invisible, which is most of the way back
+         to the bug this is fixing. Splitting the two lets the FILL say "here
+         this week" and the RING say "this is what you clicked", which is one
+         variable each. */
+      .style("fill-opacity", opacityFor)
+      .style("stroke-opacity", strokeOpacityFor)
       .style("fill", d => {
         // --- FIXED LOGIC START ---
         // 1) Random mode: colour by CURRENT timeslice community
@@ -2175,14 +2891,18 @@ function updateCommunitySpiralSideWidget() {
         /* highlight this ellipse & its counterpart in the main chart */
         d3.select(this)
           .style("stroke", getEdgeColorByType(d.type))
-          .style("stroke-width", 2);
+          .style("stroke-width", isEgo(d) ? 3 : 2);
         d3.selectAll(".happy")
           .filter(n => n.node === d.node)
           .style("stroke", "blue")
           .style("stroke-width", 3);
 
         /* side-pane text box & charts */
+        // A frozen cohort can contain nodes that no longer exist in the current
+        // slice, in which case there is nothing to describe — bail rather than
+        // dereference undefined.
         const curNode = currentNodeMap.get(d.node);
+        if (!curNode) return;
         const neighbours = connections_list[d.node] || [];
         const commDataCur = global_data.filter(n => n.community === curNode.community);
 
@@ -2198,9 +2918,13 @@ function updateCommunitySpiralSideWidget() {
           curNode.name,
           curNode.anchor_name
         );
-        draw_spiral(commDataCur, neighbours, d.node);
+        /* draw_spiral() is NOT called here: it renders into #community_spiral,
+           which no longer exists in index.html, so it throws on a null
+           getBoundingClientRect() and kills the two calls below. Same reason it
+           is not called from the main node hover. */
         drawCommunityAdjMatrix(commDataCur, node_to_node_link_data);
         drawNodeTimesliceChart(d.node);
+        if (window.EgoSpiral) window.EgoSpiral.show(d.node);
       })
       .on("mouseout", function(event, d) {
         hoverInfo.text("");
@@ -2209,8 +2933,8 @@ function updateCommunitySpiralSideWidget() {
         edgesOriginalSel.style("opacity", 0);
 
         d3.select(this)
-          .style("stroke", "#333")
-          .style("stroke-width", 1);
+          .style("stroke", strokeFor(d))
+          .style("stroke-width", strokeWidthFor(d));
 
         d3.selectAll(".happy")
           .filter(n => n.node === d.node)
@@ -2229,10 +2953,10 @@ function updateCommunitySpiralSideWidget() {
 function getColorBasedOnFlags(nodeObj) {
   //  Example logic for your existing flags:
   if (localVolatilityColFlag == 1) {
-    if (nodeObj.type === "outandin") return "#ca0020";
-    else if (nodeObj.type === "incoming") return "#0571b0";
-    else if (nodeObj.type === "outgoing") return "#f4a582";
-    else return "#92c5de";
+    if (nodeObj.type === "outandin") return "#CC79A7";
+    else if (nodeObj.type === "incoming") return "#0072B2";
+    else if (nodeObj.type === "outgoing") return "#E69F00";
+    else return "#8C8C8C";
   }
   else if (densityColFlag == 1) {
     return colorscaleDensity(nodeObj.density);
@@ -2274,7 +2998,7 @@ function getColorBasedOnFlags(nodeObj) {
   }
 
   // fallback if no flag is set
-  return "#92c5de";
+  return "#8C8C8C";
 }
 
 
@@ -2310,9 +3034,48 @@ function opt_no_of_nodes(community_count) {
 // This array will hold [{ name: "...", id: 123 }, ...] from author_mapping.txt
 let authorMappingArray = [];
 
+/* Build the search list from the node data that is ALREADY loaded.
+
+   This used to depend solely on data/<dataset>/author_mapping.txt, which does
+   not exist for data_vispub or smallreddit. The fetch 404'd, the promise
+   rejected, populateDatalist() never ran, and the datalist stayed empty — so
+   the user typed a name, searchSelectedNode() got no "id - name" string to
+   parse, parseInt returned NaN and the search reported "Invalid node ID".
+
+   Every node CSV carries a `name` column, so the list is derived from
+   allYearsNodeData across all slices (union, not just the current one, so a
+   node that has left the current slice is still findable). author_mapping.txt
+   is now an optional override for datasets that ship a nicer label. */
+function buildMappingFromLoadedData() {
+  const seen = new Map();                       // id -> name
+  const dicts = (window.currentSlices || []).map(l => (allYearsNodeData || {})[l]).filter(Boolean);
+  const sources = dicts.length ? dicts : [];
+  sources.forEach(dict => {
+    Object.keys(dict).forEach(idStr => {
+      const id = +idStr;
+      if (seen.has(id)) return;
+      const nm = dict[id] && dict[id].name;
+      if (nm && nm !== "undefined") seen.set(id, nm);
+    });
+  });
+  // Fall back to the current slice's rendered data if the cross-slice cache is
+  // not populated yet (first paint ordering).
+  if (!seen.size && Array.isArray(global_data_unchanged)) {
+    global_data_unchanged.forEach(n => {
+      if (!seen.has(n.node) && n.name && n.name !== "undefined") seen.set(n.node, n.name);
+    });
+  }
+  return [...seen.entries()]
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 function loadAuthorMapping() {
-  const authorPath = `data/${window.currentDataset}/author_mapping.txt`; // Adjust path if needed
-  console.log("Loading author mapping from:", authorPath);
+  // Always populate from loaded data first, so search works with no extra file.
+  authorMappingArray = buildMappingFromLoadedData();
+  populateDatalist(authorMappingArray);
+
+  const authorPath = `data/${window.currentDataset}/author_mapping.txt`;
   d3.text(authorPath).then(function(text) {
     // Parse the text line by line
     // Each line typically looks like: "Abdo, H.: 0"
@@ -2339,8 +3102,23 @@ function loadAuthorMapping() {
       });
     });
 
-    // Now populate the <datalist> with these items
+    /* MERGE, never replace. Enron's mapping file holds addresses
+       ("a..bibi_ENRON_a..bibi@enron.com") while the node CSV holds display
+       names ("Sanjay Bhatnagar"); whichever list wins outright, the other
+       spelling stops being searchable. Both are kept so either works. */
+    const fromFile = authorMappingArray;
+    const fromData = buildMappingFromLoadedData();
+    const seen = new Set();
+    authorMappingArray = [...fromData, ...fromFile].filter(e => {
+      const key = e.id + "|" + e.name;
+      if (!e.name || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
     populateDatalist(authorMappingArray);
+  }).catch(() => {
+    // No author_mapping.txt for this dataset — the data-derived list already
+    // loaded above, so there is nothing to do but stay quiet.
   });
 }
 
@@ -2498,13 +3276,18 @@ window.SpinTrixMainZoom = (function () {
 
   // Level-of-detail overlay for far zoom-out
   function updateLOD(k) {
-    d3.selectAll(".spiral_edges")
-      .classed("non-scaling-stroke", true)
-      .style("stroke-opacity", k < 0.6 ? 0 : 0.2);
+    // Hide edges when zoomed far out, otherwise defer to the weight-driven
+    // resting opacity rather than flattening every edge to one value.
+    d3.selectAll(".spiral_edges").classed("non-scaling-stroke", true);
+    if (k < 0.6) d3.selectAll(".spiral_edges").style("stroke-opacity", 0);
+    else         resetEdgeOpacity();
 
     d3.selectAll(".adjacent_edges")
       .classed("non-scaling-stroke", true)
-      .style("stroke-opacity", k < 0.8 ? 0 : 0.5);
+      .style("stroke-opacity", k < 0.8 ? 0 : 0.55);
+
+    // Labels are sized in screen pixels, so a zoom change has to re-scale them.
+    rescaleHoverLabels();
 
     if (!lodG) return;
 
