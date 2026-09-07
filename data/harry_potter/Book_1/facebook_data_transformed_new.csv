@@ -1,11 +1,11 @@
-node,centrality,community,density,name,type,betwness,closeness,eign,volatility
-58,5,0,0,Seamus Finnigan,incoming,0.0,0.6923076923076923,0.3903929414604273,4
-11,5,0,0,Dean Thomas,incoming,0.0,0.6923076923076923,0.3903929414604273,4
-44,6,0,0,Neville Longbottom,incoming,0.2222222222222222,0.75,0.40309377137713964,5
-50,1,0,0,Parvati Patil,outandin,0.0,0.45,0.07818334237051407,1
-19,2,0,0,Fred Weasley,incoming,0.0,0.5294117647058824,0.10551610694568755,5
-20,2,0,0,George Weasley,incoming,0.0,0.5294117647058824,0.10551610694568755,5
-52,1,0,0,Percy Weasley,incoming,0.0,0.5,0.0850497528500161,4
-56,5,0,0,Ronald Weasley,incoming,0.0,0.6923076923076923,0.39039294146042725,5
-25,8,0,0,Harry James Potter,incoming,0.5555555555555556,0.9,0.43849221586527,5
-26,5,0,0,Hermione Granger,incoming,0.0,0.6923076923076923,0.39039294146042725,5
+node,centrality,community,density,name,type,betwness,closeness,eign,volatility,anchor_name
+58,5,0,0,Seamus Finnigan,incoming,0.0,0.6923076923076923,0.3903929414604273,4,Gryffindor
+11,5,0,0,Dean Thomas,incoming,0.0,0.6923076923076923,0.3903929414604273,4,Gryffindor
+44,6,0,0,Neville Longbottom,incoming,0.2222222222222222,0.75,0.40309377137713964,5,Gryffindor
+50,1,0,0,Parvati Patil,outandin,0.0,0.45,0.07818334237051407,1,Gryffindor
+19,2,0,0,Fred Weasley,incoming,0.0,0.5294117647058824,0.10551610694568755,5,Gryffindor
+20,2,0,0,George Weasley,incoming,0.0,0.5294117647058824,0.10551610694568755,5,Gryffindor
+52,1,0,0,Percy Weasley,incoming,0.0,0.5,0.0850497528500161,4,Gryffindor
+56,5,0,0,Ronald Weasley,incoming,0.0,0.6923076923076923,0.39039294146042725,5,Gryffindor
+25,8,0,0,Harry James Potter,incoming,0.5555555555555556,0.9,0.43849221586527,5,Gryffindor
+26,5,0,0,Hermione Granger,incoming,0.0,0.6923076923076923,0.39039294146042725,5,Gryffindor
